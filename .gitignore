@@ -14,7 +14,9 @@ node_modules
 Q3/.venv/
 Q3/*.py
 
-# 大体积音频（避免 push 408 超时；部署后可自行用 LFS 或 CDN 补回）
+# 大体积音频（避免 push 408 超时；首次推送排除，后续可 LFS 或 CDN 补回）
+1.主页/Local Fuel -主页背景.mp3
+Q1/贯穿所有的bgm.mp3
 1.主页/开始.wav
 1.主页/Anescanada Church (228b0e69c58b4598944a1314c89018a1).wav
 Q3/drama.wav
@@ -23,3 +25,5 @@ Q4/early.wav
 Q4/The Texas Transportation Security Administration (b2f5ddad8b0846b4beaa70f6b2d2ae7a).wav
 结束/Whispering.wav
 结束/over.wav
+.vercel
+.env*.local
