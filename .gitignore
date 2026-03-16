@@ -1,0 +1,25 @@
+# 本地 / 开发
+.DS_Store
+.venv
+__pycache__
+*.pyc
+.env
+.env.*
+*.log
+node_modules
+.cursor
+.idea
+
+# Q3 虚拟环境与脚本（部署用 .vercelignore 已排除）
+Q3/.venv/
+Q3/*.py
+
+# 大体积音频（避免 push 408 超时；部署后可自行用 LFS 或 CDN 补回）
+1.主页/开始.wav
+1.主页/Anescanada Church (228b0e69c58b4598944a1314c89018a1).wav
+Q3/drama.wav
+Q3/system.wav
+Q4/early.wav
+Q4/The Texas Transportation Security Administration (b2f5ddad8b0846b4beaa70f6b2d2ae7a).wav
+结束/Whispering.wav
+结束/over.wav

@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Q2 听力填空 · 猫咪鱼缸宝藏</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{--cyan:#00ffff;--magenta:#ff00ff;--yellow:#ffff00;--green:#00ff88;--red:#ff2244;--bg:#030810;--panel:rgba(6,14,30,0.96)}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);color:#e0f0ff;font-family:'Noto Sans SC',sans-serif;overflow-x:hidden}
+body{display:flex;flex-direction:column;align-items:center;min-height:100vh}
+#scanline{position:fixed;inset:0;pointer-events:none;z-index:9000;background:repeating-linear-gradient(0deg,transparent 0,transparent 2px,rgba(0,0,0,.09) 2px,rgba(0,0,0,.09) 3px)}
+.bg-glow{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:0}
+.bg-glow::before{content:'';position:absolute;width:700px;height:700px;border-radius:50%;background:radial-gradient(circle,#00ffff,transparent);opacity:.04;top:-280px;left:-280px;filter:blur(80px)}
+.bg-glow::after{content:'';position:absolute;width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,#ff00ff,transparent);opacity:.04;bottom:-160px;right:-160px;filter:blur(80px)}
+#app{position:relative;z-index:10;max-width:560px;width:100%;display:flex;flex-direction:column;padding:16px 16px 40px}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes slideUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes blink{50%{opacity:0}}
+
+/* INTRO */
+.intro-overlay{position:fixed;inset:0;z-index:800;background:rgba(3,8,16,.93);display:flex;align-items:center;justify-content:center;padding:20px;animation:fadeIn .3s forwards}
+.intro-overlay.hidden{display:none}
+.intro-modal{max-width:420px;width:100%;background:var(--panel);border:1px solid rgba(0,255,255,.22);box-shadow:0 0 60px rgba(0,255,255,.07),0 0 120px rgba(255,0,255,.04),inset 0 0 40px rgba(0,0,0,.4);padding:24px 22px 20px;position:relative;animation:slideUp .4s .1s both}
+.intro-modal::before,.intro-modal::after,.intro-modal .bl,.intro-modal .br{content:'';position:absolute;width:16px;height:16px}
+.intro-modal::before{top:0;left:0;border-top:2px solid var(--cyan);border-left:2px solid var(--cyan)}
+.intro-modal::after{top:0;right:0;border-top:2px solid var(--cyan);border-right:2px solid var(--cyan)}
+.intro-modal .bl{bottom:0;left:0;border-bottom:2px solid var(--magenta);border-left:2px solid var(--magenta)}
+.intro-modal .br{bottom:0;right:0;border-bottom:2px solid var(--magenta);border-right:2px solid var(--magenta)}
+.intro-speaker{font-family:'Press Start 2P',monospace;font-size:7px;color:rgba(232,121,249,.8);letter-spacing:.15em;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.intro-speaker::before{content:'';width:6px;height:6px;background:var(--magenta);border-radius:50%;box-shadow:0 0 8px var(--magenta);animation:blink .8s step-end infinite}
+.intro-bubble{font-size:13.5px;line-height:1.85;color:rgba(224,240,255,.9);margin-bottom:22px;border-left:2px solid rgba(0,255,255,.2);padding-left:12px}
+.intro-bubble em{color:var(--cyan);font-style:normal}
+.intro-btn{font-family:'Press Start 2P',monospace;font-size:8px;color:var(--cyan);border:1px solid rgba(0,255,255,.5);padding:12px 28px;background:rgba(0,255,255,.08);cursor:pointer;display:block;margin:0 auto;transition:background .2s,box-shadow .2s;letter-spacing:.05em}
+.intro-btn:hover{background:rgba(0,255,255,.18);box-shadow:0 0 20px rgba(0,255,255,.25)}
+
+/* MAIN */
+.q2-main{display:none;flex-direction:column;gap:14px}
+.q2-main.visible{display:flex;animation:slideUp .4s forwards}
+
+.q-progress{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.q-progress-label{font-family:'Press Start 2P',monospace;font-size:8px;color:var(--cyan);letter-spacing:.12em;text-shadow:0 0 10px rgba(0,255,255,.5);flex-shrink:0}
+.q-progress-track{flex:1;height:8px;background:rgba(0,255,255,.08);border:1px solid rgba(255,255,255,.25);border-radius:2px;overflow:hidden}
+.q-progress-fill{height:100%;border-radius:1px;background:linear-gradient(90deg,var(--cyan),var(--magenta),var(--yellow));box-shadow:0 0 12px rgba(0,255,255,.4);transition:width .4s ease}
+.q-progress-num{font-family:'Press Start 2P',monospace;font-size:9px;color:var(--magenta);letter-spacing:.08em;text-shadow:0 0 10px rgba(255,0,255,.5);flex-shrink:0}
+
+.q-header{display:flex;flex-direction:column;gap:10px;align-items:center;text-align:center}
+.q-tag{font-family:'Press Start 2P',monospace;font-size:clamp(9px,2.2vw,11px);letter-spacing:.1em;display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap}
+.q-tag-num{color:var(--cyan);text-shadow:0 0 8px rgba(0,255,255,.4)}
+.q-tag-sep{color:var(--cyan);opacity:.9}
+.q-tag-cat{color:var(--magenta);text-shadow:0 0 8px rgba(255,0,255,.4);font-size:0.95em}
+.q-text{font-size:clamp(18px,4.5vw,22px);font-weight:600;color:rgba(0,255,255,.98);line-height:1.5;text-shadow:0 0 20px rgba(0,255,255,.5),0 0 40px rgba(0,255,255,.2),0 0 60px rgba(0,255,255,.08);font-family:'Noto Sans SC',sans-serif;letter-spacing:.06em;max-width:100%}
+.q-hint{font-size:14px;font-weight:500;color:rgba(255,255,0,.95);font-family:'Noto Sans SC',sans-serif;text-shadow:0 0 12px rgba(255,255,0,.5);letter-spacing:.04em}
+
+/* 听力解码 — 终端头 */
+.audio-terminal{display:flex;align-items:center;gap:8px;margin-bottom:12px;padding:8px 10px;border:1px solid rgba(0,255,255,.15);background:rgba(0,40,60,.25)}
+.audio-terminal-dots{display:flex;gap:4px}
+.audio-terminal-dot{width:8px;height:8px;border-radius:50%}
+.audio-terminal-dot.r{background:rgba(255,0,0,.6)}
+.audio-terminal-dot.y{background:rgba(255,255,0,.6)}
+.audio-terminal-dot.g{background:rgba(0,255,0,.6)}
+.audio-terminal-label{font-family:'Press Start 2P',monospace;font-size:6px;color:rgba(0,255,255,.5);letter-spacing:.06em}
+.audio-terminal-led{width:8px;height:8px;border-radius:50%;background:#333;flex-shrink:0}
+.audio-terminal-led.on{background:#0f0;animation:blink .8s step-end infinite}
+.decode-all-egg{display:none;margin-bottom:14px;padding:12px 14px 14px;border:1px solid rgba(0,255,136,.3);background:rgba(0,0,0,.25);border-left:4px solid var(--green);border-radius:2px;font-family:'Press Start 2P',monospace}
+.decode-all-egg.visible{display:block;animation:decodeEggIn .35s ease forwards}
+@keyframes decodeEggIn{0%{opacity:0;transform:translateY(4px)}100%{opacity:1;transform:translateY(0)}}
+.decode-all-egg .egg-log-prefix{font-size:10px;letter-spacing:.12em;color:var(--green);margin-bottom:10px;opacity:0;filter:blur(3px)}
+.decode-all-egg.visible .egg-log-prefix{animation:eggDecodeIn .6s ease .15s forwards}
+.decode-all-egg .egg-body{font-size:13px;line-height:1.85;color:rgba(224,240,255,.9);font-family:'Noto Sans SC',sans-serif;opacity:0;filter:blur(6px);letter-spacing:.08em}
+.decode-all-egg.visible .egg-body{animation:eggBodyDecode .9s ease .35s forwards}
+.decode-all-egg .egg-body .egg-tagline{display:block;margin-top:10px;font-weight:600;font-size:14px;letter-spacing:.06em;background:linear-gradient(90deg,var(--cyan),var(--green),var(--yellow));background-size:200% auto;background-clip:text;-webkit-background-clip:text;color:transparent;text-shadow:none;animation:eggTaglineShine 3s ease-in-out infinite}
+@keyframes eggTaglineShine{0%,100%{background-position:0% center}50%{background-position:100% center}}
+@keyframes eggDecodeIn{0%{opacity:0;filter:blur(4px)}100%{opacity:1;filter:blur(0)}}
+@keyframes eggBodyDecode{0%{opacity:0;filter:blur(6px);letter-spacing:.1em}100%{opacity:1;filter:blur(0);letter-spacing:0}}
+
+/* 卡片 */
+.listen-cards{display:flex;flex-direction:column;gap:12px}
+.listen-card{position:relative;border:1px solid rgba(255,255,255,.1);padding:12px 12px 12px 14px;transition:border-color .3s,background .3s;overflow:hidden}
+.listen-card.solved{border-color:rgba(0,255,0,.4);background:rgba(0,255,0,.04)}
+.listen-card.selected{border-color:var(--cyan);background:rgba(0,255,255,.08)}
+.card-accent{position:absolute;left:0;top:0;bottom:0;width:4px}
+.card-body{padding-left:6px}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px}
+.key-badge{font-family:'Press Start 2P',monospace;font-size:8px;padding:4px 8px;border:1px solid;border-radius:2px}
+.decoded-badge{font-family:'Press Start 2P',monospace;font-size:6px;padding:4px 6px;background:rgba(0,255,0,.12);border:1px solid rgba(0,255,0,.35);color:#0f0;display:none}
+.listen-card.solved .decoded-badge{display:inline-block}
+.btn-play-wrap{display:flex;align-items:center;gap:8px;padding:6px 10px;border:1px solid;cursor:pointer;transition:background .2s,border-color .2s;user-select:none}
+.btn-play-wrap:hover{background:rgba(255,255,255,.05)}
+.btn-play-wrap.playing{border-color:currentColor;background:rgba(255,255,255,.06)}
+.btn-play-wrap:disabled{opacity:.6;cursor:default}
+.play-icon{font-size:14px;line-height:1}
+.waveform-wrap{display:flex;align-items:flex-end;gap:2px;height:20px}
+.waveform-bar{width:4px;border-radius:2px 2px 0 0;height:3px;transition:height .2s,opacity .2s}
+.waveform-wrap.playing .waveform-bar{animation:wavePulse .35s ease-in-out infinite}
+.waveform-wrap.playing .waveform-bar:nth-child(1){animation-delay:0s}
+.waveform-wrap.playing .waveform-bar:nth-child(2){animation-delay:.04s}
+.waveform-wrap.playing .waveform-bar:nth-child(3){animation-delay:.08s}
+.waveform-wrap.playing .waveform-bar:nth-child(4){animation-delay:.12s}
+.waveform-wrap.playing .waveform-bar:nth-child(5){animation-delay:.16s}
+.waveform-wrap.playing .waveform-bar:nth-child(6){animation-delay:.02s}
+.waveform-wrap.playing .waveform-bar:nth-child(7){animation-delay:.06s}
+.waveform-wrap.playing .waveform-bar:nth-child(8){animation-delay:.1s}
+.waveform-wrap.playing .waveform-bar:nth-child(9){animation-delay:.14s}
+.waveform-wrap.playing .waveform-bar:nth-child(10){animation-delay:.03s}
+.waveform-wrap.playing .waveform-bar:nth-child(11){animation-delay:.07s}
+.waveform-wrap.playing .waveform-bar:nth-child(12){animation-delay:.11s}
+.waveform-wrap.playing .waveform-bar:nth-child(13){animation-delay:.05s}
+.waveform-wrap.playing .waveform-bar:nth-child(14){animation-delay:.09s}
+.waveform-wrap.playing .waveform-bar:nth-child(15){animation-delay:.13s}
+.waveform-wrap.playing .waveform-bar:nth-child(16){animation-delay:.15s}
+@keyframes wavePulse{0%,100%{height:3px;opacity:.6}50%{height:12px;opacity:1}}
+.card-sentence{display:flex;align-items:center;flex-wrap:wrap;gap:6px 8px;margin-bottom:8px}
+.card-prefix{font-size:17px;font-weight:500;color:rgba(224,240,255,.92);font-family:'Noto Sans SC',sans-serif}
+.char-inputs{display:flex;gap:6px}
+.char-input{width:38px;height:38px;text-align:center;font-size:16px;font-weight:500;background:rgba(0,255,255,.06);border:2px solid rgba(0,255,255,.35);color:var(--cyan);font-family:'Noto Sans SC',sans-serif;border-radius:4px;transition:border-color .2s,box-shadow .2s}
+.char-input:focus{outline:none;border-color:var(--cyan);box-shadow:0 0 10px rgba(0,255,255,.25)}
+.char-input.filled{border-color:inherit;box-shadow:0 0 8px rgba(0,255,255,.2)}
+.char-input.shake{animation:wrongShake .4s ease}
+@keyframes wrongShake{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+.card-hint{font-size:10px;color:rgba(255,255,255,.6);font-family:'Noto Sans SC',sans-serif;margin-bottom:8px;display:none;line-height:1.5}
+.card-hint .hint-icon{color:rgba(255,255,0,.9);margin-right:4px}
+.listen-card.show-hint .card-hint{display:block}
+.card-answer-text{
+  display:none;
+  font-size:17px;
+  font-weight:500;
+  font-family:'Noto Sans SC',sans-serif;
+  margin-top:2px;
+  line-height:1.5;
+  transition:font-size .25s ease, text-shadow .25s ease;
+}
+.listen-card.solved .card-answer-text{display:block}
+.listen-card.selected .card-answer-text{
+  font-size:22px;
+  text-shadow:0 0 18px currentColor, 0 0 36px currentColor;
+}
+.listen-card.selected{transform:scale(1.01);box-shadow:0 0 24px rgba(0,255,255,.08)}
+.card-egg{font-size:11px;margin-top:8px;padding:10px 12px;border:1px dashed rgba(232,121,249,.55);background:rgba(255,105,180,.08);color:rgba(255,182,193,.95);font-family:'Noto Sans SC',sans-serif;display:none;line-height:1.6}
+.listen-card.has-egg .card-egg{display:block}
+.card-egg-count{font-family:'Press Start 2P',monospace;font-size:7px;color:rgba(255,255,255,.5);margin-left:6px;vertical-align:middle}
+.listen-card.solved{cursor:pointer}
+.listen-card.solved:hover{background:rgba(255,255,255,.04)}
+.listen-card.solved .card-hint{display:none !important}
+.listen-card.solved .card-egg{display:none !important}
+.listen-card.solved .btn-play-wrap{display:none}
+.listen-card.solved .card-sentence{display:none}
+
+/* CONFIRM */
+.confirm-zone{opacity:0;pointer-events:none;transition:opacity .3s,transform .3s;transform:translateY(8px);display:flex;flex-direction:column;align-items:center;gap:12px;padding:4px 0}
+.confirm-zone.visible{opacity:1;pointer-events:all;transform:translateY(0)}
+.confirm-selected-text{font-family:monospace;font-size:12px;color:rgba(255,255,255,.5);text-align:center}
+.confirm-hint{font-family:'Press Start 2P',monospace;font-size:6px;color:rgba(255,255,255,.2);letter-spacing:.06em;text-align:center}
+.confirm-btn{font-family:'Press Start 2P',monospace;font-size:9px;color:var(--cyan);border:1px solid rgba(0,255,255,.5);padding:13px 32px;background:rgba(0,255,255,.07);cursor:pointer;transition:background .2s,box-shadow .2s;letter-spacing:.06em}
+.confirm-btn:hover{background:rgba(0,255,255,.18);box-shadow:0 0 24px rgba(0,255,255,.2)}
+
+/* 填错彩蛋 */
+#wrong-modal{position:fixed;inset:0;z-index:4000;background:rgba(0,0,0,.8);display:none;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px)}
+#wrong-modal.open{display:flex;animation:fadeIn .2s forwards}
+.wrong-box{max-width:320px;width:100%;background:var(--panel);border:1px solid rgba(255,200,0,.4);box-shadow:0 0 40px rgba(255,200,0,.08);padding:24px 22px 20px;position:relative;animation:slideUp .28s forwards}
+.wrong-box::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,0,.5),transparent)}
+.wrong-eva{font-family:'Press Start 2P',monospace;font-size:7px;color:rgba(255,200,0,.9);letter-spacing:.1em;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.wrong-eva::before{content:'';width:5px;height:5px;background:var(--yellow);border-radius:50%;box-shadow:0 0 6px var(--yellow);animation:blink .7s step-end infinite}
+.wrong-msg{font-size:14px;line-height:1.8;color:rgba(224,240,255,.92);margin-bottom:20px}
+.wrong-msg em{color:var(--yellow);font-style:normal}
+.wrong-btn{font-family:'Press Start 2P',monospace;font-size:7px;padding:10px 20px;border:2px solid var(--yellow);background:rgba(255,255,0,.1);color:var(--yellow);cursor:pointer;transition:background .2s}
+.wrong-btn:hover{background:rgba(255,255,0,.2)}
+</style>
+</head>
+<body>
+<audio id="q2-bgm" loop preload="auto"><source src="../Q1/贯穿所有的bgm.mp3" type="audio/mpeg"></audio>
+<div id="scanline"></div>
+<div class="bg-glow"></div>
+
+<!-- INTRO -->
+<div class="intro-overlay" id="introOverlay">
+  <div class="intro-modal">
+    <div class="bl"></div><div class="br"></div>
+    <div class="intro-speaker">春姬 · Niuma</div>
+    <div class="intro-bubble">
+      <em>「谐音梗与抽象话」</em>——旧时代人类最神秘的遗产<br><br>
+      那时人类靠一种叫「互联网」的培养皿沟通。不爱说人话，就爱把字拆、缩、扭成团，美其名曰<em>「表达艺术」</em><br><br>
+      参加<em>听力大考</em>解码藏在文字褶皱里的<em>纯粹的快乐本能</em>
+    </div>
+    <button class="intro-btn" id="introBtn">开始大考</button>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div id="app">
+  <div class="q2-main" id="q2Main">
+    <div class="q-progress">
+      <span class="q-progress-label">PROGRESS</span>
+      <div class="q-progress-track">
+        <div class="q-progress-fill" id="q2ProgressFill" style="width:60%"></div>
+      </div>
+      <span class="q-progress-num" id="q2ProgressNum">3/5</span>
+    </div>
+    <div class="q-header">
+      <div class="q-tag"><span class="q-tag-num">QUESTION_03</span><span class="q-tag-sep">//</span><span class="q-tag-cat">听力解码测试</span></div>
+      <div class="q-text">对于猫咪鱼缸宝藏的感受</div>
+      <div class="q-hint">点击 ▶ 播放音频，听写填入最后四个字来解锁选项</div>
+    </div>
+    <div class="audio-terminal" id="audioTerminal">
+      <div class="audio-terminal-dots">
+        <span class="audio-terminal-dot r"></span>
+        <span class="audio-terminal-dot y"></span>
+        <span class="audio-terminal-dot g"></span>
+      </div>
+      <span class="audio-terminal-label" id="terminalLabel">AUDIO_DECODER_TERMINAL v3.7 — 0/5 DECODED</span>
+      <div class="audio-terminal-led" id="terminalLed"></div>
+    </div>
+    <div class="decode-all-egg" id="decodeAllEgg">
+      <div class="egg-log-prefix" id="decodeAllEggPrefix"></div>
+      <div class="egg-body" id="decodeAllEggText"></div>
+    </div>
+    <div class="listen-cards" id="listenCards"></div>
+    <div class="confirm-zone" id="confirmZone">
+      <div class="confirm-selected-text" id="confirmText"></div>
+      <button class="confirm-btn" id="confirmBtn">确认选择</button>
+    </div>
+  </div>
+</div>
+
+<!-- 全局提示 -->
+<div id="wrong-modal">
+  <div class="wrong-box">
+    <div class="wrong-eva">春姬 · Niuma</div>
+    <div class="wrong-msg" id="wrongMsg">先填四个字再提交哦～</div>
+    <button type="button" class="wrong-btn" id="wrongClose">好的</button>
+  </div>
+</div>
+
+<audio id="q2_audio_a" preload="auto"><source src="A.mp3" type="audio/mpeg"></audio>
+<audio id="q2_audio_b" preload="auto"><source src="B.mp3" type="audio/mpeg"></audio>
+<audio id="q2_audio_c" preload="auto"><source src="C.mp3" type="audio/mpeg"></audio>
+<audio id="q2_audio_d" preload="auto"><source src="D.mp3" type="audio/mpeg"></audio>
+<audio id="q2_audio_e" preload="auto"><source src="E.mp3" type="audio/mpeg"></audio>
+
+<script>
+(function(){
+var OPTIONS = [
+  { key:'A', prefix:'我们不说YYDS，我们说', answer:'无可挑剔', slang:'YYDS', color:'#00ffff', audioId:'q2_audio_a' },
+  { key:'B', prefix:'我们不说针不戳，我们说', answer:'略有瑕疵', slang:'针不戳', color:'#00ff88', audioId:'q2_audio_b' },
+  { key:'C', prefix:'我们不说就这水平，我们说', answer:'平平淡淡', slang:'就这水平', color:'#ffff00', audioId:'q2_audio_c' },
+  { key:'D', prefix:'我们不说蚌埠住了，我们说', answer:'差强人意', slang:'蚌埠住了', color:'#ff8800', audioId:'q2_audio_d' },
+  { key:'E', prefix:'我们不说真下头，我们说', answer:'令人作呕', slang:'真下头', color:'#ff0044', audioId:'q2_audio_e' }
+];
+var wrongEggs = [
+  '春姬: "你的听力和你的精神状态一样令人担忧"',
+  '春姬: "这...你确定你的神经接口没松？"',
+  '春姬: "哇，这个答案比异化物还离谱"',
+  '春姬: "建议去心理炼金会做个全面检查"',
+  '春姬: "救世军的听写测试你怕是过不了"',
+  '春姬: "连宇宙魔方都猜不到你会写这个"',
+  '春姬: "你的耳朵是不是被朊病毒感染了？"',
+  '春姬: "降临日之后人类的听力也降临了吗"',
+  '春姬: "这答案能让魔方教团笑三天"',
+  '春姬: "哈？你是不是把耳机戴反了？"',
+  '春姬: "...我已经死了都能听得比你准"',
+  '春姬: "我怀疑你不是在听，你在通灵"'
+];
+var closeEggs = [
+  '春姬: "嗯...快了快了，再听一遍？"',
+  '春姬: "对了一半，你的精神污染程度还行"',
+  '春姬: "有那味了！但还差一点点"',
+  '春姬: "部分正确！你的耳蜗还没完全报废"'
+];
+var otherAnswerEggs = [
+  '春姬: "串台了，你填的是隔壁题的答案吧。"',
+  '春姬: "这是当前这条的格子，不是别的选项的答案哦。"',
+  '春姬: "答案没错，但放错格子了——再听听这条？"'
+];
+var slangEggs = [
+  '春姬: "那是「我们不说」后面的词，不是「我们说」后面的……"',
+  '春姬: "谐音梗要扣钱的。"',
+  '春姬: "你填的是前半句的梗，我要的是后半句四个字。"'
+];
+var catFishEggs = [
+  '春姬: "猫猫和鱼缸是主题，不是答案哦～"',
+  '春姬: "摸鱼可以，填「摸鱼」不行。"',
+  '春姬: "本关是猫咪鱼缸宝藏，但答案在音频里呀。"'
+];
+var ALL_ANSWERS = ['无可挑剔','略有瑕疵','平平淡淡','差强人意','令人作呕'];
+var SLANG_STRINGS = ['YYDS','针不戳','就这水平','蚌埠住了','真下头'];
+var CAT_FISH_STRINGS = ['猫','鱼','摸鱼','捞鱼','鱼缸','宝藏','猫咪','猫猫','钓鱼'];
+
+function playSynthAudio(text, color, onEnd){
+  try {
+    var ctx = new (window.AudioContext || window.webkitAudioContext)();
+    var totalDuration = 1.8;
+    var chars = text.split('');
+    var charDuration = totalDuration / chars.length;
+    var baseFreq = color === '#00ffff' ? 260 : color === '#00ff88' ? 290 : color === '#ffff00' ? 320 : color === '#ff8800' ? 350 : 380;
+    for (var i = 0; i < chars.length; i++) {
+      var startTime = ctx.currentTime + i * charDuration;
+      var osc1 = ctx.createOscillator();
+      var osc2 = ctx.createOscillator();
+      osc1.type = 'sawtooth'; osc2.type = 'sine';
+      var pitchVar = ((i * 7 + 3) % 5 - 2) * 30;
+      osc1.frequency.value = baseFreq + pitchVar;
+      osc2.frequency.value = (baseFreq + pitchVar) * 2.02;
+      var lp = ctx.createBiquadFilter();
+      lp.type = 'lowpass';
+      lp.frequency.setValueAtTime(1200 + pitchVar * 3, startTime);
+      lp.frequency.exponentialRampToValueAtTime(600, startTime + charDuration * 0.8);
+      lp.Q.value = 3;
+      var g = ctx.createGain();
+      g.gain.setValueAtTime(0.001, startTime);
+      g.gain.linearRampToValueAtTime(0.08, startTime + 0.02);
+      g.gain.setValueAtTime(0.08, startTime + charDuration * 0.6);
+      g.gain.exponentialRampToValueAtTime(0.001, startTime + charDuration * 0.95);
+      osc1.connect(lp); osc2.connect(lp); lp.connect(g); g.connect(ctx.destination);
+      osc1.start(startTime); osc1.stop(startTime + charDuration);
+      osc2.start(startTime); osc2.stop(startTime + charDuration);
+    }
+    setTimeout(function(){ try{ ctx.close(); }catch(e){} if(onEnd) onEnd(); }, totalDuration * 1000 + 200);
+  } catch(e) { if(onEnd) setTimeout(onEnd, 400); }
+}
+
+function playSuccessBeep(){
+  try {
+    var ctx = new AudioContext();
+    var osc = ctx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(880, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(1320, ctx.currentTime + 0.15);
+    var g = ctx.createGain();
+    g.gain.setValueAtTime(0.12, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2);
+    osc.connect(g).connect(ctx.destination);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.2);
+    setTimeout(function(){ ctx.close(); }, 300);
+  } catch(e) {}
+}
+
+function playErrorBuzz(){
+  try {
+    var ctx = new AudioContext();
+    var osc = ctx.createOscillator();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(150, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(60, ctx.currentTime + 0.15);
+    var lp = ctx.createBiquadFilter();
+    lp.type = 'lowpass';
+    lp.frequency.value = 600;
+    var g = ctx.createGain();
+    g.gain.setValueAtTime(0.1, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2);
+    osc.connect(lp).connect(g).connect(ctx.destination);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.2);
+    setTimeout(function(){ ctx.close(); }, 300);
+  } catch(e) {}
+}
+
+var solvedKeys = {};
+var selectedKey = null;
+var wrongModal = document.getElementById('wrong-modal');
+var wrongMsg = document.getElementById('wrongMsg');
+var wrongClose = document.getElementById('wrongClose');
+var terminalLabel = document.getElementById('terminalLabel');
+var terminalLed = document.getElementById('terminalLed');
+var decodeAllEgg = document.getElementById('decodeAllEgg');
+var decodeAllEggPrefix = document.getElementById('decodeAllEggPrefix');
+var decodeAllEggText = document.getElementById('decodeAllEggText');
+var confirmZone = document.getElementById('confirmZone');
+var confirmText = document.getElementById('confirmText');
+var confirmBtn = document.getElementById('confirmBtn');
+var DECODE_ALL_EGG_MSG = '破译成功！成功把一堆土味网络梗，翻译成了能上得了台面的中华雅言。';
+var DECODE_ALL_EGG_TAGLINE = '语言净化大师，认证通过！';
+var allDecodedEggShown = false;
+
+function updateTerminal(){
+  var n = Object.keys(solvedKeys).length;
+  if (n === 5 && !allDecodedEggShown) {
+    allDecodedEggShown = true;
+    terminalLabel.textContent = '4/4 · 语言净化大师认证通过';
+    var now = new Date();
+    var ts = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0') + ':' + now.getSeconds().toString().padStart(2,'0');
+    if (decodeAllEggPrefix) decodeAllEggPrefix.textContent = '>> [' + ts + '] ACHIEVE';
+    if (decodeAllEggText) decodeAllEggText.innerHTML = DECODE_ALL_EGG_MSG + '<span class="egg-tagline">' + DECODE_ALL_EGG_TAGLINE + '</span>';
+    if (decodeAllEgg) decodeAllEgg.classList.add('visible');
+    if (confirmZone) {
+      confirmZone.classList.add('visible');
+      confirmText.innerHTML = '请点击上方某一项完成选择，再点击下方确认';
+    }
+    try { playSuccessBeep(); } catch(e) {}
+  } else if (n < 5) {
+    terminalLabel.textContent = 'AUDIO_DECODER_TERMINAL v3.7 — ' + n + '/5 DECODED';
+  }
+  terminalLed.classList.toggle('on', n >= 1);
+}
+
+function showWrong(msg){
+  wrongMsg.innerHTML = msg || '先填四个字再提交哦～';
+  wrongModal.classList.add('open');
+}
+wrongClose.addEventListener('click', function(){ wrongModal.classList.remove('open'); });
+
+// ── 停止所有正在播放的音频 ──────────────────────────────────────────────
+function stopAllAudio(){
+  OPTIONS.forEach(function(o){
+    var el = document.getElementById(o.audioId);
+    if (el && !el.paused) {
+      el.pause();
+      el.currentTime = 0;
+    }
+  });
+}
+
+// ── 播放选项听力时 BGM 压低（与 Q1 放歌时一致）────────────────────────────
+var bgmKeepInterval = null;
+function duckBGM(){ var b = document.getElementById('q2-bgm'); if (b) { b.volume = 0.1; if (b.paused) b.play().catch(function(){}); } }
+function restoreBGM(){ if (bgmKeepInterval) { clearInterval(bgmKeepInterval); bgmKeepInterval = null; } var b = document.getElementById('q2-bgm'); if (b) b.volume = 0.3; }
+
+function buildCards(){
+  var container = document.getElementById('listenCards');
+  container.innerHTML = '';
+  OPTIONS.forEach(function(opt){
+    var card = document.createElement('div');
+    card.className = 'listen-card';
+    card.dataset.key = opt.key;
+    card.style.borderColor = 'rgba(255,255,255,.1)';
+    var accent = document.createElement('div');
+    accent.className = 'card-accent';
+    accent.style.background = opt.color;
+    var body = document.createElement('div');
+    body.className = 'card-body';
+    var header = document.createElement('div');
+    header.className = 'card-header';
+    var keyBadge = document.createElement('span');
+    keyBadge.className = 'key-badge';
+    keyBadge.textContent = opt.key;
+    keyBadge.style.borderColor = opt.color + '80';
+    keyBadge.style.background = opt.color + '18';
+    keyBadge.style.color = opt.color;
+    var decodedBadge = document.createElement('span');
+    decodedBadge.className = 'decoded-badge';
+    decodedBadge.textContent = 'DECODED ✓';
+    var playWrap = document.createElement('button');
+    playWrap.type = 'button';
+    playWrap.className = 'btn-play-wrap';
+    playWrap.style.borderColor = opt.color + '60';
+    playWrap.style.color = opt.color;
+    var playIcon = document.createElement('span');
+    playIcon.className = 'play-icon';
+    playIcon.textContent = '▶';
+    var waveWrap = document.createElement('div');
+    waveWrap.className = 'waveform-wrap';
+    waveWrap.style.color = opt.color;
+    for (var w = 0; w < 16; w++) {
+      var bar = document.createElement('div');
+      bar.className = 'waveform-bar';
+      bar.style.backgroundColor = opt.color + '50';
+      bar.style.height = '3px';
+      waveWrap.appendChild(bar);
+    }
+    playWrap.appendChild(playIcon);
+    playWrap.appendChild(waveWrap);
+    header.appendChild(keyBadge);
+    header.appendChild(decodedBadge);
+    header.appendChild(playWrap);
+    body.appendChild(header);
+
+    var sent = document.createElement('div');
+    sent.className = 'card-sentence';
+    var prefix = document.createElement('span');
+    prefix.className = 'card-prefix';
+    prefix.textContent = opt.prefix + '「';
+    sent.appendChild(prefix);
+    var inputWrap = document.createElement('div');
+    inputWrap.className = 'char-inputs';
+    var inputs = [];
+    for (var i = 0; i < 4; i++) {
+      var inp = document.createElement('input');
+      inp.type = 'text';
+      inp.className = 'char-input';
+      inp.maxLength = 4;
+      inp.dataset.idx = String(i);
+      inp.style.borderColor = opt.color + '60';
+      inp.style.caretColor = opt.color;
+      inp.style.color = opt.color;
+      inputWrap.appendChild(inp);
+      inputs.push(inp);
+    }
+    sent.appendChild(inputWrap);
+    var suffix = document.createElement('span');
+    suffix.className = 'card-prefix';
+    suffix.textContent = '」';
+    sent.appendChild(suffix);
+    body.appendChild(sent);
+
+    var hint = document.createElement('div');
+    hint.className = 'card-hint';
+    hint.innerHTML = '<span class="hint-icon">💡</span>提示: 网络用语「' + opt.slang + '」的正式表达...首字是「' + opt.answer[0] + '」';
+    body.appendChild(hint);
+
+    var answerText = document.createElement('div');
+    answerText.className = 'card-answer-text';
+    answerText.style.color = opt.color;
+    body.appendChild(answerText);
+
+    var egg = document.createElement('div');
+    egg.className = 'card-egg';
+    body.appendChild(egg);
+
+    card.appendChild(accent);
+    card.appendChild(body);
+    container.appendChild(card);
+
+    var state = { solved: false, playing: false, attempts: 0, isComposing: false };
+
+    function resetPlayUI(){
+      state.playing = false;
+      playWrap.classList.remove('playing');
+      waveWrap.classList.remove('playing');
+      playIcon.textContent = '▶';
+      restoreBGM();
+    }
+
+    function setEgg(txt){
+      egg.innerHTML = txt + (state.attempts > 0 ? '<span class="card-egg-count">x' + state.attempts + '</span>' : '');
+      card.classList.add('has-egg');
+    }
+    function clearEgg(){
+      egg.innerHTML = '';
+      card.classList.remove('has-egg');
+    }
+
+    function distributeChars(str, startIdx) {
+      if (!str) return false;
+      var totalAvailSlots = 4 - startIdx;
+      if (str.length > totalAvailSlots) {
+        showWrong('最多只能填四个字，你填多了哦 ✦');
+        for (var k = startIdx; k < 4; k++) {
+          inputs[k].value = '';
+          inputs[k].classList.remove('filled');
+        }
+        return false;
+      }
+      for (var j = 0; j < str.length; j++) {
+        var targetIdx = startIdx + j;
+        if (targetIdx >= 4) break;
+        inputs[targetIdx].value = str[j];
+        inputs[targetIdx].classList.toggle('filled', !!str[j]);
+      }
+      var focusIdx = Math.min(startIdx + str.length, 3);
+      inputs[focusIdx].focus();
+      var allFilled = inputs.every(function(x){ return x.value.trim().length > 0; });
+      if (allFilled && !state.solved) {
+        setTimeout(checkAnswer, 80);
+        return true;
+      }
+      return false;
+    }
+
+    function checkAnswer(){
+      var str = inputs.map(function(inp){ return (inp.value || '').trim(); }).join('');
+      if (str.length < 4) {
+        showWrong('先填四个字再提交哦～');
+        return;
+      }
+      if (str === opt.answer) {
+        state.solved = true;
+        card.classList.add('solved');
+        answerText.textContent = opt.prefix + '「' + opt.answer + '」';
+        solvedKeys[opt.key] = true;
+        updateTerminal();
+        playSuccessBeep();
+        clearEgg();
+        return;
+      }
+      state.attempts++;
+      inputs.forEach(function(inp){ inp.classList.add('shake'); });
+      setTimeout(function(){ inputs.forEach(function(inp){ inp.classList.remove('shake'); }); }, 400);
+      var eggTxt = '';
+      if (ALL_ANSWERS.indexOf(str) >= 0 && str !== opt.answer) {
+        eggTxt = otherAnswerEggs[Math.floor(Math.random() * otherAnswerEggs.length)];
+      } else if (SLANG_STRINGS.some(function(s){ return str === s || str.indexOf(s) >= 0; })) {
+        eggTxt = slangEggs[Math.floor(Math.random() * slangEggs.length)];
+      } else if (CAT_FISH_STRINGS.some(function(s){ return str.indexOf(s) >= 0; })) {
+        eggTxt = catFishEggs[Math.floor(Math.random() * catFishEggs.length)];
+      } else {
+        var correctCount = 0;
+        for (var j = 0; j < 4; j++) { if (inputs[j].value === opt.answer[j]) correctCount++; }
+        eggTxt = correctCount >= 2
+          ? closeEggs[Math.floor(Math.random() * closeEggs.length)]
+          : wrongEggs[Math.floor(Math.random() * wrongEggs.length)];
+      }
+      setEgg(eggTxt);
+      if (state.attempts >= 3) card.classList.add('show-hint');
+      playErrorBuzz();
+      setTimeout(function(){
+        inputs.forEach(function(inp){ inp.value = ''; inp.classList.remove('filled'); });
+        if (inputs[0]) inputs[0].focus();
+      }, 600);
+    }
+
+    // ── 修复后的播放逻辑 ─────────────────────────────────────────────────
+    playWrap.addEventListener('click', function(){
+      if (state.solved) return;
+
+      // 如果当前正在播放，点击停止
+      if (state.playing) {
+        var audioEl = document.getElementById(opt.audioId);
+        if (audioEl) { audioEl.pause(); audioEl.currentTime = 0; }
+        resetPlayUI();
+        return;
+      }
+
+      var audioEl = document.getElementById(opt.audioId);
+      if (!audioEl) return;
+
+      // 停止其他选项的音频（同时只播一条）
+      OPTIONS.forEach(function(o){
+        if (o.audioId !== opt.audioId) {
+          var other = document.getElementById(o.audioId);
+          if (other && !other.paused) { other.pause(); other.currentTime = 0; }
+        }
+      });
+
+      state.playing = true;
+      playWrap.classList.add('playing');
+      waveWrap.classList.add('playing');
+      playIcon.textContent = '⏹';
+      audioEl.currentTime = 0;
+      duckBGM();
+      if (bgmKeepInterval) clearInterval(bgmKeepInterval);
+      bgmKeepInterval = setInterval(duckBGM, 350);
+
+      var maxDur = opt.key === 'A' ? 4.0 : opt.key === 'C' ? 7.0 : opt.key === 'D' ? 3.5 : null;
+      function stopAtMax(){
+        if (maxDur != null && audioEl.currentTime >= maxDur) {
+          audioEl.pause();
+          audioEl.removeEventListener('timeupdate', stopAtMax);
+          resetPlayUI();
+        }
+      }
+      if (maxDur != null) audioEl.addEventListener('timeupdate', stopAtMax);
+
+      // ▼ 关键修复：直接 play()，失败才 fallback 合成音
+      var playPromise = audioEl.play();
+      if (playPromise !== undefined) {
+        playPromise.then(function(){
+          // 真实音频播放成功，等待 ended 或到达时长上限
+        }).catch(function(err){
+          console.warn('真实音频播放失败，切换合成音:', err);
+          if (maxDur != null) audioEl.removeEventListener('timeupdate', stopAtMax);
+          resetPlayUI();
+          state.playing = true;
+          duckBGM();
+          if (bgmKeepInterval) clearInterval(bgmKeepInterval);
+          bgmKeepInterval = setInterval(duckBGM, 350);
+          playSynthAudio(opt.prefix + opt.answer, opt.color, function(){
+            resetPlayUI();
+          });
+        });
+      }
+
+      audioEl.onended = function(){
+        if (maxDur != null) audioEl.removeEventListener('timeupdate', stopAtMax);
+        resetPlayUI();
+      };
+      audioEl.onerror = function(err){
+        console.warn('音频加载出错，切换合成音:', err);
+        resetPlayUI();
+        state.playing = true;
+        duckBGM();
+        if (bgmKeepInterval) clearInterval(bgmKeepInterval);
+        bgmKeepInterval = setInterval(duckBGM, 350);
+        playSynthAudio(opt.prefix + opt.answer, opt.color, function(){
+          resetPlayUI();
+        });
+      };
+    });
+    // ─────────────────────────────────────────────────────────────────────
+
+    inputs.forEach(function(inp, i){
+      inp.addEventListener('compositionstart', function(){
+        state.isComposing = true;
+      });
+      inp.addEventListener('compositionend', function(){
+        state.isComposing = false;
+        var raw = inp.value.trim();
+        inp.value = '';
+        inp.classList.remove('filled');
+        if (!raw) return;
+        if (raw.length > 4 - i) {
+          showWrong('最多只能填四个字，你填多了哦 ✦');
+          return;
+        }
+        distributeChars(raw, i);
+      });
+      inp.addEventListener('input', function(){
+        if (state.isComposing) return;
+        var raw = inp.value;
+        if (raw.length > 1) {
+          inp.value = '';
+          inp.classList.remove('filled');
+          if (raw.length > 4 - i) {
+            showWrong('最多只能填四个字，你填多了哦 ✦');
+            return;
+          }
+          distributeChars(raw, i);
+          return;
+        }
+        var ch = raw.slice(-1);
+        inp.value = ch;
+        inp.classList.toggle('filled', !!ch);
+        if (ch && i < 3) {
+          inputs[i + 1].focus();
+        }
+        var allFilled = inputs.every(function(x){ return x.value.trim().length > 0; });
+        if (allFilled && !state.solved) setTimeout(checkAnswer, 80);
+      });
+      inp.addEventListener('keydown', function(e){
+        if (e.key === 'Backspace' && !inp.value && i > 0) {
+          inputs[i - 1].focus();
+          inputs[i - 1].value = '';
+          inputs[i - 1].classList.remove('filled');
+        }
+      });
+    });
+
+    card.addEventListener('click', function(e){
+      if (!state.solved) return;
+      if (e.target.closest('.btn-play-wrap')) return;
+      document.querySelectorAll('.listen-card.selected').forEach(function(c){ c.classList.remove('selected'); });
+      card.classList.add('selected');
+      selectedKey = opt.key;
+      var o = OPTIONS.find(function(x){ return x.key === opt.key; });
+      confirmText.innerHTML = '✓ 已选择: ' + opt.key + ' — ' + (o ? o.prefix + o.answer : '');
+      confirmZone.classList.add('visible');
+      confirmZone.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
+  });
+}
+
+confirmBtn.addEventListener('click', function(){
+  if (!selectedKey) return;
+  try {
+    if (window.surveySetAnswer) window.surveySetAnswer('Q2', selectedKey);
+    if (window.surveyNext) window.surveyNext();
+  } catch(e) {}
+  try { localStorage.setItem('survey_q2', selectedKey); } catch(e) {}
+  window.location.href = '../Q3/survey_q3.html';
+});
+
+function startBGM(){var b=document.getElementById('q2-bgm');if(b){b.volume=0.3;b.play().catch(function(){});}}
+startBGM();
+document.addEventListener('click',function onFirst(){startBGM();document.removeEventListener('click',onFirst);document.removeEventListener('touchstart',onFirst);},{once:true,passive:true});
+document.addEventListener('touchstart',function onFirst(){startBGM();document.removeEventListener('click',onFirst);document.removeEventListener('touchstart',onFirst);},{once:true,passive:true});
+document.getElementById('introBtn').addEventListener('click', function(){
+  startBGM();
+  document.getElementById('introOverlay').classList.add('hidden');
+  document.getElementById('q2Main').classList.add('visible');
+  buildCards();
+});
+})();
+</script>
+</body>
+</html>

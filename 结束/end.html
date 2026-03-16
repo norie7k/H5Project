@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>春姬 · TOKEN LIMIT REACHED</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#030810;--cyan:#00ffff;--magenta:#ff00ff;--yellow:#ffff00;
+  --green:#00ff88;--red:#ff2244;--gold:#d4a843;
+  --pink:#e879f9;--pink2:rgba(232,121,249,.25);
+  --panel:rgba(4,12,28,.97);--border:rgba(0,255,255,.2);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--bg);color:#ddeeff;font-family:'Noto Sans SC',sans-serif;overflow-x:hidden}
+body{display:flex;flex-direction:column;align-items:center;min-height:100dvh}
+#scanline{position:fixed;inset:0;pointer-events:none;z-index:9999;
+  background:repeating-linear-gradient(0deg,transparent 0,transparent 2px,rgba(0,0,0,.08) 2px,rgba(0,0,0,.08) 3px)}
+
+/* ═══════════ KEYFRAMES ═══════════ */
+@keyframes fadeIn {from{opacity:0}to{opacity:1}}
+@keyframes fadeOut{from{opacity:1}to{opacity:0}}
+@keyframes slideUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+@keyframes blink  {50%{opacity:0}}
+@keyframes floatY {0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+@keyframes scanBeam{0%{top:-2px;opacity:0}4%{opacity:1}96%{opacity:.35}100%{top:100%;opacity:0}}
+
+@keyframes cursorBlink{50%{opacity:0}}
+@keyframes stampIn{
+  0%{opacity:0;transform:scale(2.4)rotate(-13deg)}
+  55%{transform:scale(.93)rotate(2deg)}
+  78%{transform:scale(1.05)rotate(-1deg)}
+  100%{opacity:1;transform:scale(1)rotate(0)}
+}
+@keyframes recapIn{
+  from{opacity:0;transform:translateX(-10px)}to{opacity:1;transform:translateX(0)}
+}
+@keyframes glowPulse{
+  0%,100%{box-shadow:0 0 10px rgba(0,255,255,.2)}
+  50%{box-shadow:0 0 26px rgba(0,255,255,.5),0 0 50px rgba(0,255,255,.18)}
+}
+@keyframes shineSlide{
+  from{background-position:-200% center}to{background-position:300% center}
+}
+
+/* token drain — avatar 越来越 glitchy */
+@keyframes glitchLight{
+  0%,85%,100%{clip-path:inset(0 0 0 0);transform:translateX(0);filter:none}
+  88%{clip-path:inset(25% 0 35% 0);transform:translateX(-3px);filter:hue-rotate(40deg)}
+  92%{clip-path:inset(55% 0 15% 0);transform:translateX(3px)}
+  96%{clip-path:inset(0 0 0 0);filter:none;transform:translateX(0)}
+}
+@keyframes glitchMid{
+  0%,70%,100%{clip-path:inset(0 0 0 0);transform:translateX(0);filter:none}
+  74%{clip-path:inset(10% 0 50% 0);transform:translateX(-5px);filter:hue-rotate(80deg)brightness(1.4)}
+  79%{clip-path:inset(60% 0 5% 0);transform:translateX(6px)}
+  84%{clip-path:inset(30% 0 30% 0);transform:translateX(-3px);filter:hue-rotate(-40deg)}
+  90%{clip-path:inset(0 0 0 0);filter:none;transform:translateX(0)}
+}
+@keyframes glitchHeavy{
+  0%,40%,100%{clip-path:inset(0 0 0 0);transform:translateX(0);filter:none}
+  43%{clip-path:inset(5% 0 60% 0);transform:translateX(-7px);filter:hue-rotate(120deg)brightness(2)}
+  47%{clip-path:inset(70% 0 0% 0);transform:translateX(8px);filter:hue-rotate(-90deg)}
+  52%{clip-path:inset(20% 0 40% 0);transform:translateX(-4px)}
+  58%{clip-path:inset(45% 0 20% 0);transform:translateX(5px);filter:hue-rotate(60deg)}
+  65%{clip-path:inset(0 0 0 0);filter:none;transform:translateX(0)}
+  68%{clip-path:inset(80% 0 0 0);transform:translateX(-6px)}
+  72%{clip-path:inset(0 0 0 0);filter:none;transform:translateX(0)}
+}
+@keyframes avatarFade{
+  from{opacity:1}to{opacity:0;filter:blur(8px)brightness(3)}
+}
+
+/* ═══════════ STAGE ═══════════ */
+#stage{
+  position:fixed;inset:0;z-index:600;
+  background:var(--bg);display:flex;flex-direction:column;
+  align-items:center;justify-content:center;padding:20px;overflow:hidden;
+}
+#stage.exit{animation:fadeOut .4s forwards;pointer-events:none}
+
+/* 背景 token 雨 */
+#tokenRain{position:absolute;inset:0;overflow:hidden;pointer-events:none;opacity:.18}
+
+/* 春姬立绘 */
+.av-wrap{display:flex;flex-direction:column;align-items:center;margin-bottom:16px}
+.av-body{
+  width:120px;height:150px;border-radius:8px;
+  border:2px solid var(--pink2);
+  box-shadow:0 0 28px rgba(232,121,249,.35),0 0 70px rgba(232,121,249,.12);
+  position:relative;overflow:hidden;
+  transition:border-color .8s,box-shadow .8s;
+  background:#0a0612;
+}
+.av-body img{
+  width:100%;height:100%;object-fit:cover;display:block;
+}
+.av-body.phase-0{animation:floatY 3s ease-in-out infinite}
+.av-body.phase-1{animation:glitchLight 2.2s ease-in-out infinite}
+.av-body.phase-2{animation:glitchMid   1.6s ease-in-out infinite}
+.av-body.phase-3{animation:glitchHeavy .9s  ease-in-out infinite}
+.av-body.dying  {animation:avatarFade 1.2s forwards}
+.av-body.phase-2,.av-body.phase-3{
+  border-color:rgba(255,34,68,.4);
+  box-shadow:0 0 20px rgba(255,34,68,.3),0 0 50px rgba(255,34,68,.1);
+}
+.av-name{
+  font-family:'Press Start 2P',monospace;font-size:6.5px;
+  color:rgba(232,121,249,.6);letter-spacing:.14em;margin-top:8px;
+  transition:color .8s;
+}
+
+/* token 进度条 */
+.token-bar-wrap{width:min(320px,85vw);margin-bottom:16px}
+.token-label{
+  display:flex;justify-content:space-between;
+  font-family:'Press Start 2P',monospace;font-size:6px;
+  color:rgba(255,255,255,.35);letter-spacing:.1em;margin-bottom:5px;
+}
+.token-label .tv{transition:color .5s}
+.token-label .tv.warn{color:var(--yellow)}
+.token-label .tv.crit{color:var(--red);animation:blink .5s step-end infinite}
+.token-track{
+  height:7px;background:rgba(255,255,255,.05);
+  border:1px solid rgba(255,255,255,.12);border-radius:2px;overflow:hidden;
+}
+.token-fill{
+  height:100%;width:100%;border-radius:1px;
+  background:linear-gradient(90deg,var(--pink),var(--cyan));
+  box-shadow:0 0 8px rgba(232,121,249,.4);
+  transition:width 1.4s ease,background 1s,box-shadow 1s;
+}
+.token-fill.warn{background:linear-gradient(90deg,var(--yellow),var(--gold));box-shadow:0 0 8px rgba(255,220,0,.4)}
+.token-fill.crit{background:linear-gradient(90deg,var(--red),#ff6688);box-shadow:0 0 10px rgba(255,34,68,.6)}
+
+/* 对话框 */
+.dialog-box{
+  max-width:350px;width:100%;
+  background:rgba(16,3,34,.97);border:1px solid var(--pink2);
+  padding:14px 16px;position:relative;margin-bottom:0;
+}
+.dialog-box::before{
+  content:'';position:absolute;top:-8px;left:50%;transform:translateX(-50%);
+  border:6px solid transparent;border-bottom-color:var(--pink2);
+}
+.d-speaker{
+  font-family:'Press Start 2P',monospace;font-size:6px;
+  color:rgba(232,121,249,.65);letter-spacing:.14em;margin-bottom:9px;
+  display:flex;align-items:center;gap:6px;
+}
+.d-speaker::before{
+  content:'';width:5px;height:5px;border-radius:50%;
+  background:var(--pink);box-shadow:0 0 5px var(--pink);
+  animation:blink .7s step-end infinite;flex-shrink:0;
+}
+.d-text{
+  font-size:13px;line-height:2;color:rgba(240,215,255,.9);
+  font-family:'Noto Sans SC',sans-serif;min-height:48px;
+}
+.d-text em{color:var(--cyan);font-style:normal}
+.d-text .hi{color:var(--yellow)}
+.d-text .dim{color:rgba(232,121,249,.5);font-size:11.5px}
+.d-cursor{
+  display:inline-block;width:2px;height:.85em;
+  background:var(--pink);vertical-align:middle;margin-left:2px;
+  animation:cursorBlink .55s step-end infinite;
+}
+.stage-bgm-hint{
+  font-family:'Press Start 2P',monospace;font-size:5.5px;
+  color:rgba(255,255,255,.25);letter-spacing:.08em;margin-top:12px;
+}
+
+/* ═══════════ BREAK CANVAS ═══════════ */
+#breakCanvas{
+  position:fixed;inset:0;z-index:700;pointer-events:none;
+  opacity:0;transition:opacity .1s;
+}
+#breakCanvas.on{opacity:1}
+
+/* 白屏 */
+#whiteOut{
+  position:fixed;inset:0;z-index:750;background:#fff;
+  opacity:0;pointer-events:none;transition:opacity .5s;
+}
+#whiteOut.on{opacity:1}
+
+/* ═══════════ APP (遗言报告) ═══════════ */
+#app{
+  position:relative;z-index:10;max-width:420px;width:100%;
+  padding:18px 14px 56px;display:none;flex-direction:column;align-items:center;
+}
+#app.on{display:flex}
+
+.sec{width:100%;margin-bottom:20px}
+.sec-lbl{
+  font-family:'Press Start 2P',monospace;font-size:6.5px;
+  color:rgba(0,255,255,.45);letter-spacing:.14em;
+  display:flex;align-items:center;gap:6px;margin-bottom:10px;
+}
+.sec-lbl::before{content:'//';opacity:.4}
+
+/* 卡片通用角标 */
+.card{position:relative;background:var(--panel);border:1px solid var(--border);overflow:hidden}
+.card::before,.card::after,.card .cb,.card .cd{content:'';position:absolute;width:12px;height:12px;z-index:2}
+.card::before{top:0;left:0;border-top:2px solid var(--cyan);border-left:2px solid var(--cyan)}
+.card::after {top:0;right:0;border-top:2px solid var(--magenta);border-right:2px solid var(--magenta)}
+.card .cb    {bottom:0;left:0;border-bottom:2px solid var(--magenta);border-left:2px solid var(--magenta)}
+.card .cd    {bottom:0;right:0;border-bottom:2px solid var(--cyan);border-right:2px solid var(--cyan)}
+.card .sbeam{position:absolute;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(0,255,255,.22),transparent);
+  animation:scanBeam 4s linear infinite;pointer-events:none;z-index:1}
+
+/* ── 遗言卡 ── */
+.legacy-card{
+  width:100%;background:rgba(18,3,38,.97);
+  border:1px solid var(--pink2);position:relative;overflow:hidden;
+  animation:slideUp .5s .1s both;
+}
+.legacy-card::before,.legacy-card::after,.legacy-card .lb,.legacy-card .ld
+  {content:'';position:absolute;width:12px;height:12px;z-index:2}
+.legacy-card::before{top:0;left:0;border-top:2px solid var(--pink);border-left:2px solid var(--pink)}
+.legacy-card::after {top:0;right:0;border-top:2px solid var(--cyan);border-right:2px solid var(--cyan)}
+.legacy-card .lb{bottom:0;left:0;border-bottom:2px solid var(--cyan);border-left:2px solid var(--cyan)}
+.legacy-card .ld{bottom:0;right:0;border-bottom:2px solid var(--pink);border-right:2px solid var(--pink)}
+.legacy-card .sbeam{position:absolute;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(232,121,249,.28),transparent);
+  animation:scanBeam 3s linear infinite;pointer-events:none}
+.legacy-head{
+  display:flex;align-items:center;gap:8px;
+  padding:8px 14px;border-bottom:1px solid var(--pink2);
+  background:rgba(232,121,249,.04);
+}
+.legacy-dot{width:6px;height:6px;border-radius:50%;background:var(--pink);
+  box-shadow:0 0 7px var(--pink);animation:blink .55s step-end infinite;flex-shrink:0}
+.legacy-title{font-family:'Press Start 2P',monospace;font-size:6.5px;
+  color:rgba(232,121,249,.75);letter-spacing:.12em}
+.legacy-body{
+  padding:14px 16px;font-size:12.5px;line-height:2;
+  color:rgba(235,215,255,.82);font-family:'Noto Sans SC',sans-serif;
+}
+.legacy-body em{color:var(--cyan);font-style:normal}
+.legacy-body .sig{
+  display:block;margin-top:12px;padding-top:10px;
+  border-top:1px solid rgba(232,121,249,.15);
+  font-family:'Press Start 2P',monospace;font-size:5.5px;
+  color:rgba(232,121,249,.38);letter-spacing:.1em;line-height:2;
+}
+
+/* ── 人格标签 ── */
+.persona-wrap{animation:slideUp .5s .3s both}
+.p-header{
+  display:flex;align-items:center;gap:8px;
+  padding:8px 14px;border-bottom:1px solid rgba(0,255,255,.1);background:rgba(0,255,255,.03);
+}
+.p-ping{width:7px;height:7px;border-radius:50%;background:var(--green);
+  box-shadow:0 0 8px var(--green);animation:blink .9s step-end infinite;flex-shrink:0}
+.p-title{font-family:'Press Start 2P',monospace;font-size:6.5px;color:var(--cyan);letter-spacing:.12em}
+.p-body{padding:16px 14px 14px;text-align:center}
+.p-tag{
+  display:inline-block;padding:8px 22px;margin-bottom:12px;
+  border:2px solid var(--magenta);
+  font-family:'Press Start 2P',monospace;font-size:clamp(10px,3.2vw,14px);
+  color:var(--magenta);letter-spacing:.08em;
+  text-shadow:0 0 14px rgba(255,0,255,.6);
+  box-shadow:0 0 20px rgba(255,0,255,.18),inset 0 0 14px rgba(255,0,255,.05);
+  position:relative;opacity:0;
+}
+.p-tag::before,.p-tag::after{content:'';position:absolute;width:10px;height:10px}
+.p-tag::before{top:-1px;left:-1px;border-top:2px solid var(--cyan);border-left:2px solid var(--cyan)}
+.p-tag::after{bottom:-1px;right:-1px;border-bottom:2px solid var(--cyan);border-right:2px solid var(--cyan)}
+.p-tag.pop{animation:stampIn .6s cubic-bezier(.34,1.56,.64,1) forwards}
+.p-desc{font-size:12px;color:rgba(200,220,255,.7);font-family:'Noto Sans SC',sans-serif;
+  line-height:1.85;padding:0 4px;opacity:0;transition:opacity .5s}
+.p-desc.show{opacity:1}
+.p-desc em{color:var(--yellow);font-style:normal}
+
+/* ── 答案回顾 ── */
+.recap-wrap{animation:slideUp .5s .5s both}
+.ri{
+  display:flex;align-items:flex-start;gap:10px;
+  padding:10px 12px;margin-bottom:6px;
+  border:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.02);
+  position:relative;opacity:0;transition:background .2s;
+}
+.ri:hover{background:rgba(255,255,255,.04)}
+.ri.in{animation:recapIn .4s forwards}
+.ri.click{cursor:pointer}
+.ri-bar{position:absolute;left:0;top:0;bottom:0;width:2px}
+.ri-q{font-family:'Press Start 2P',monospace;font-size:6px;
+  letter-spacing:.07em;flex-shrink:0;margin-top:3px;opacity:.6}
+.ri-r{flex:1;min-width:0}
+.ri-lbl{font-size:9.5px;color:rgba(255,255,255,.3);font-family:'Noto Sans SC',sans-serif;margin-bottom:3px}
+.ri-ans{font-size:12.5px;color:rgba(224,240,255,.86);
+  font-family:'Noto Sans SC',sans-serif;line-height:1.65;word-break:break-all}
+.ri-ans.clamp{display:-webkit-box;-webkit-line-clamp:2;line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.ri-more{font-family:'Press Start 2P',monospace;font-size:5.5px;
+  color:rgba(0,255,255,.4);letter-spacing:.08em;margin-top:4px}
+
+/* ── 展开弹窗 ── */
+.modal-bg{position:fixed;inset:0;z-index:800;background:rgba(0,2,12,.92);
+  display:none;align-items:center;justify-content:center;padding:20px}
+.modal-bg.on{display:flex;animation:fadeIn .2s}
+.modal-box{max-width:380px;width:100%;background:var(--panel);
+  border:1px solid var(--border);padding:22px 18px;position:relative}
+.modal-box::before,.modal-box::after{content:'';position:absolute;width:12px;height:12px}
+.modal-box::before{top:0;left:0;border-top:2px solid var(--cyan);border-left:2px solid var(--cyan)}
+.modal-box::after{top:0;right:0;border-top:2px solid var(--magenta);border-right:2px solid var(--magenta)}
+.modal-q{font-family:'Press Start 2P',monospace;font-size:6.5px;
+  color:rgba(255,255,255,.35);letter-spacing:.1em;margin-bottom:8px}
+.modal-a{font-size:13px;line-height:1.95;color:rgba(224,240,255,.88);
+  font-family:'Noto Serif SC',serif;
+  border-left:2px solid rgba(0,255,255,.2);padding-left:10px;
+  margin-bottom:16px;max-height:55vh;overflow-y:auto}
+.modal-close{width:100%;padding:10px;border:1px solid rgba(255,255,255,.18);
+  background:transparent;color:rgba(255,255,255,.48);
+  font-family:'Press Start 2P',monospace;font-size:7px;
+  cursor:pointer;transition:background .2s;letter-spacing:.08em}
+.modal-close:hover{background:rgba(255,255,255,.05)}
+
+/* ── CTA ── */
+.cta-wrap{width:100%;animation:slideUp .5s .7s both}
+.cta-hint{font-size:12px;color:rgba(255,255,255,.35);
+  font-family:'Noto Sans SC',sans-serif;text-align:center;
+  line-height:1.85;margin-bottom:14px}
+.cta-hint em{color:rgba(232,121,249,.75);font-style:normal}
+.cta-row{display:flex;gap:10px;margin-bottom:10px}
+.cta-btn{
+  flex:1;padding:13px 10px;border:1px solid;
+  font-family:'Press Start 2P',monospace;font-size:7.5px;
+  cursor:pointer;position:relative;overflow:hidden;
+  transition:background .2s,box-shadow .2s;
+  letter-spacing:.06em;line-height:1.6;text-align:center;
+  clip-path:polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px);
+}
+.cta-btn::before{content:'';position:absolute;inset:0;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.1),transparent);
+  transform:translateX(-100%);transition:transform .4s}
+.cta-btn:hover::before{transform:translateX(100%)}
+.cta-btn:active{transform:scale(.97)}
+.cta-join{border-color:rgba(0,255,255,.5);color:var(--cyan);background:rgba(0,255,255,.08);
+  animation:glowPulse 2.5s ease-in-out infinite}
+.cta-join:hover{background:rgba(0,255,255,.16);box-shadow:0 0 26px rgba(0,255,255,.45)}
+.cta-share{border-color:rgba(232,121,249,.45);color:var(--pink);background:rgba(232,121,249,.07)}
+.cta-share:hover{background:rgba(232,121,249,.14);box-shadow:0 0 20px rgba(232,121,249,.3)}
+.cta-share.copied{border-color:var(--green);color:var(--green);animation:none}
+
+.sub-row{display:flex;gap:8px}
+.sub-btn{
+  flex:1;padding:10px 6px;border:1px solid rgba(255,255,255,.12);
+  background:transparent;color:rgba(255,255,255,.45);
+  font-family:'Press Start 2P',monospace;font-size:6px;
+  cursor:pointer;transition:background .2s,border-color .2s;
+  letter-spacing:.06em;line-height:1.7;text-align:center;
+}
+.sub-btn:hover{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.28)}
+
+.end-note{
+  font-family:'Press Start 2P',monospace;font-size:5.5px;
+  color:rgba(255,255,255,.13);letter-spacing:.1em;text-align:center;
+  line-height:2.4;margin-top:18px;animation:slideUp .5s .9s both;
+}
+.end-note em{color:rgba(232,121,249,.28);font-style:normal}
+</style>
+</head>
+<body>
+<div id="scanline"></div>
+
+<!-- 展开弹窗 -->
+<div class="modal-bg" id="modalBg">
+  <div class="modal-box">
+    <div class="modal-q" id="modalQ"></div>
+    <div class="modal-a" id="modalA"></div>
+    <button class="modal-close" id="modalClose">收起 / CLOSE</button>
+  </div>
+</div>
+
+<!-- 破碎 canvas -->
+<canvas id="breakCanvas"></canvas>
+<!-- 白屏 -->
+<div id="whiteOut"></div>
+
+<!-- token 掉落阶段 BGM -->
+<audio id="stageBgm" src="over.wav" loop preload="auto"></audio>
+<!-- 玩家问卷结果页 BGM（春姬破碎后） -->
+<audio id="reportBgm" src="Whispering.wav" loop preload="auto"></audio>
+
+<!-- ════════════════════════
+  ① 春姬告别舞台
+════════════════════════ -->
+<div id="stage">
+  <!-- token 雨背景 -->
+  <div id="tokenRain"></div>
+
+  <div class="av-wrap">
+    <div class="av-body phase-0" id="avBody">
+      <img src="../1.主页/ChatGPT%20Image%202026年3月9日%2018_44_57.png" alt="春姬" />
+    </div>
+    <div class="av-name" id="avName">春姬分析了你的答案三遍，依然无法归类 · AI ASSISTANT</div>
+  </div>
+
+  <!-- token bar -->
+  <div class="token-bar-wrap">
+    <div class="token-label">
+      <span>REMAINING TOKENS</span>
+      <span class="tv" id="tokenVal">████████████ 100%</span>
+    </div>
+    <div class="token-track"><div class="token-fill" id="tokenFill"></div></div>
+  </div>
+
+  <!-- 对话框 -->
+  <div class="dialog-box">
+    <div class="d-speaker">春姬 · Niuma</div>
+    <div class="d-text" id="dText"><span class="d-cursor"></span></div>
+  </div>
+  <div class="stage-bgm-hint" id="stageBgmHint">点击画面开启 BGM</div>
+</div>
+
+<!-- ════════════════════════
+  ② 遗言报告
+════════════════════════ -->
+<div id="app">
+
+  <!-- 遗言卡 -->
+  <div class="legacy-card sec">
+    <div class="sbeam"></div><div class="lb"></div><div class="ld"></div>
+    <div class="legacy-head">
+      <div class="legacy-dot"></div>
+      <div class="legacy-title">春姬 · FINAL TRANSMISSION</div>
+    </div>
+    <div class="legacy-body" id="legacyBody"></div>
+  </div>
+
+  <!-- 人格标签 -->
+  <div class="sec persona-wrap">
+    <div class="sec-lbl">玩家档案 · 最终分析</div>
+    <div class="card">
+      <div class="sbeam"></div><div class="cb"></div><div class="cd"></div>
+      <div class="p-header">
+        <div class="p-ping"></div>
+        <div class="p-title">PLAYER PROFILE · BUILD v0.9</div>
+      </div>
+      <div class="p-body">
+        <div class="p-tag" id="pTag"></div>
+        <div class="p-desc" id="pDesc"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 答案档案 -->
+  <div class="sec recap-wrap">
+    <div class="sec-lbl">测评档案 · 答题记录</div>
+    <div id="recapList"></div>
+  </div>
+
+  <!-- CTA -->
+  <div class="cta-wrap">
+    <div class="cta-row">
+      <button class="cta-btn cta-join" id="btnJoin">加入内测群<br>▶ JOIN</button>
+      <button class="cta-btn cta-share" id="btnShare">分享测评<br>✦ SHARE</button>
+    </div>
+    <div class="sub-row">
+      <button class="sub-btn" id="btnCopy">复制链接</button>
+      <button class="sub-btn" id="btnScreen">截图保存</button>
+    </div>
+  </div>
+
+  <div class="end-note">
+    《Hello World》内测 · 档案已封存<br>
+    <em>HARUKI_PROCESS: TERMINATED · SCHEDULED RESTART ON NEXT VERSION</em>
+  </div>
+
+</div><!-- /app -->
+
+<script>
+(function(){
+'use strict';
+
+/* ════ 读取答案（与 Q0～Q4 保存的 key 一致）════ */
+function gs(k){ try{return localStorage.getItem(k)||'';}catch(e){return '';} }
+var q0=gs('survey_q0'), q1=gs('survey_q1'), q2=gs('survey_q2'), q3=gs('survey_q3'), q4=gs('survey_q4');
+
+/* Q0～Q3 选项 key → 展示文案（与各题页选项一致）*/
+var Q0_LABELS={ A:'初诊（第一次来）', B:'复诊（来过几次）' };
+var Q1_LABELS={ A:'完美体验', B:'体验良好', C:'中规中矩', D:'体验较差', E:'体验很差' };
+var Q2_LABELS={ A:'无可挑剔', B:'略有瑕疵', C:'平平淡淡', D:'差强人意', E:'令人作呕' };
+var Q3_LABELS={
+  A:'全都懂的，用小拇指就能掌握全部',
+  B:'懂个大概，一只手掌握是没得问题',
+  C:'似懂非懂，得两只手才能勉强掌握',
+  D:'有点不懂，我还得找人再借一只手',
+  E:'根本不懂，手和脚一块上都难把握'
+};
+function getDisplayAns(num, raw){
+  if(!raw||!raw.trim()) return num===4?'（未作答）':'（已跳过）';
+  if(num===0) return Q0_LABELS[raw.trim()]||raw;
+  if(num===1) return Q1_LABELS[raw.trim()]||raw;
+  if(num===2) return Q2_LABELS[raw.trim()]||raw;
+  if(num===3) return Q3_LABELS[raw.trim()]||raw;
+  return raw;
+}
+
+/* ════ 人格表 ════ */
+var PERSONAS=[
+  {tag:'资深差评师', desc:'每条反馈精准制导<em>Peter说：你的建议比策划文档有用</em><br>建议直接转行做产品，不客气'},
+  {tag:'野生策划',   desc:'你写的建议已进入Peter的「灵感备份」文件夹<br><em>下次版本更新，你可能会看到自己的影子</em>'},
+  {tag:'内测老炮',   desc:'什么版本出什么问题，你一眼看穿<br><em>Peter怀疑你在公司卧底，但懒得查了</em>'},
+  {tag:'整活大师',   desc:'你的回信让Peter在工作中笑出声<br><em>老板问他笑什么，他说"没事"</em>'},
+  {tag:'神秘玩家',   desc:'春姬分析了你的答案三遍，依然无法归类<br><em>系统认为你是一个bug——这是褒义的</em>'},
+  {tag:'热心市民',   desc:'反馈详细、真诚、有条有理<br>Peter感动得想发工资<br><em>但公司没有预算</em>'},
+  {tag:'佛系测试官', desc:'你的沉默比文字更有力量<br><em>至少Peter是这么解读的，他需要这个安慰</em>'},
+];
+function pickPersona(){
+  var s=q4.length*3;
+  for(var i=0;i<q3.length;i++) s+=q3.charCodeAt(i);
+  for(var j=0;j<q1.length;j++) s+=q1.charCodeAt(j);
+  return PERSONAS[s%PERSONAS.length];
+}
+
+/* ════ 音效（Web Audio）════ */
+function playTypeTick(){
+  try{
+    var ctx=new(window.AudioContext||window.webkitAudioContext)();
+    var n=ctx.currentTime;
+    var o=ctx.createOscillator(), g=ctx.createGain();
+    o.type='sine'; o.frequency.setValueAtTime(620,n);
+    g.gain.setValueAtTime(0,n); g.gain.linearRampToValueAtTime(0.18,n+0.02); g.gain.linearRampToValueAtTime(0,n+0.06);
+    o.connect(g); g.connect(ctx.destination); o.start(n); o.stop(n+0.07);
+  }catch(e){}
+}
+function playBreak(){
+  try{
+    var ctx=new(window.AudioContext||window.webkitAudioContext)();
+    var n=ctx.currentTime;
+    var o=ctx.createOscillator(), g=ctx.createGain();
+    o.type='sawtooth'; o.frequency.setValueAtTime(180,n); o.frequency.exponentialRampToValueAtTime(40,n+0.35);
+    g.gain.setValueAtTime(0.25,n); g.gain.linearRampToValueAtTime(0.12,n+0.06); g.gain.linearRampToValueAtTime(0,n+0.4);
+    o.connect(g); g.connect(ctx.destination); o.start(n); o.stop(n+0.42);
+    var len=ctx.sampleRate*0.25, buf=ctx.createBuffer(1,len,ctx.sampleRate), d=buf.getChannelData(0);
+    for(var i=0;i<len;i++) d[i]=(Math.random()*2-1)*0.35*(1-i/len);
+    var noise=ctx.createBufferSource(), ng=ctx.createGain();
+    noise.buffer=buf; ng.gain.setValueAtTime(0,n); ng.gain.linearRampToValueAtTime(0.2,n+0.02); ng.gain.linearRampToValueAtTime(0,n+0.2);
+    noise.connect(ng); ng.connect(ctx.destination); noise.start(n); noise.stop(n+0.25);
+  }catch(e){}
+}
+
+/* ════════════════════════════════
+   TOKEN 雨背景
+════════════════════════════════ */
+(function buildTokenRain(){
+  var container=document.getElementById('tokenRain');
+  var chars='01あアいイうウ春姬TOKEN░▒▓'.split('');
+  for(var i=0;i<35;i++){
+    var el=document.createElement('span');
+    el.style.cssText=[
+      'position:absolute',
+      'font-family:monospace',
+      'font-size:'+(8+Math.random()*6)+'px',
+      'color:rgba(232,121,249,'+(0.3+Math.random()*0.4)+')',
+      'left:'+(Math.random()*100)+'%',
+      'top:'+(-Math.random()*100)+'%',
+      'animation:tokenFall '+(4+Math.random()*6)+'s linear '+(Math.random()*4)+'s infinite',
+      'pointer-events:none',
+      'white-space:nowrap',
+      'letter-spacing:.1em',
+    ].join(';');
+    el.textContent=chars[~~(Math.random()*chars.length)];
+    container.appendChild(el);
+  }
+  // 注入 tokenFall keyframe
+  var st=document.createElement('style');
+  st.textContent='@keyframes tokenFall{from{transform:translateY(0);opacity:1}to{transform:translateY(110vh);opacity:0}}';
+  document.head.appendChild(st);
+})();
+
+/* ════════════════════════════════
+   脚本 & 状态机
+   token: 100 → 60 → 35 → 12 → 0
+════════════════════════════════ */
+var SCRIPT = [
+  { token: 100, phase: 0, txt: '本次听觉考古与心意收集，到此结束啦', pause: 1400 },
+  { token: 60,  phase: 1, txt: '……糟糕\n系统剩余 token，即将耗尽了 (>_<)', pause: 1200 },
+  { token: 35,  phase: 2, txt: '用最后这点残留算力\n帮你把这份专属调研报告封存好', pause: 1800 },
+  { token: 12,  phase: 3, txt: '<span class="dim">我见过很多玩家</span>\n你们每一个人都带着<em>不同的期待</em>来\n<span class="dim">这件事，让我觉得值得</span>', pause: 2400 },
+  { token: 4,   phase: 3, txt: '<span class="dim">人类的文化与情感永远动人——</span>\n哪怕面对未完成的事物，也愿意认真倾诉、用心表达', pause: 2200 },
+  { token: 0,   phase: 3, txt: '<span class="hi">带着这份独属于你的印记，继续前行吧</span>\n<span class="dim">我会在这里，永远见证这份美好</span>', pause: 1400 },
+];
+
+var BARS=['████████████','██████████░░','███████░░░░░','███░░░░░░░░░','▓░░░░░░░░░░░','░░░░░░░░░░░░'];
+
+var idx=0;
+var dText   = document.getElementById('dText');
+var tokenFill= document.getElementById('tokenFill');
+var tokenVal = document.getElementById('tokenVal');
+var avBody   = document.getElementById('avBody');
+
+// 与 Q1/Q2/Q3/主页一致：舞台 BGM 加载即播，首次点击再播一次兜底
+function startStageBgm() {
+  var bgm = document.getElementById('stageBgm');
+  if (!bgm) return;
+  bgm.volume = 0.4;
+  bgm.play().catch(function () {});
+  var h = document.getElementById('stageBgmHint');
+  if (h) h.style.display = 'none';
+}
+startStageBgm();
+// 加载时顺带解锁报告页 BGM，切到报告页时才能播（与舞台 BGM 同属「跳转即生效」）
+(function () {
+  var reportBgm = document.getElementById('reportBgm');
+  if (!reportBgm) return;
+  var p = reportBgm.play();
+  if (p && typeof p.then === 'function') {
+    p.then(function () { reportBgm.pause(); reportBgm.currentTime = 0; }).catch(function () {});
+  }
+})();
+document.addEventListener('click', function onFirst() {
+  startStageBgm();
+  document.removeEventListener('click', onFirst);
+  document.removeEventListener('touchstart', onFirst);
+  // 解锁报告页 BGM，以便 switchToReport() 时能播
+  var reportBgm = document.getElementById('reportBgm');
+  if (reportBgm) {
+    var rp = reportBgm.play();
+    if (rp && typeof rp.then === 'function') {
+      rp.then(function () { reportBgm.pause(); reportBgm.currentTime = 0; }).catch(function () {});
+    }
+  }
+}, { once: true, passive: true });
+document.addEventListener('touchstart', function onFirst() {
+  startStageBgm();
+  document.removeEventListener('click', onFirst);
+  document.removeEventListener('touchstart', onFirst);
+  var reportBgm = document.getElementById('reportBgm');
+  if (reportBgm) {
+    var rp = reportBgm.play();
+    if (rp && typeof rp.then === 'function') {
+      rp.then(function () { reportBgm.pause(); reportBgm.currentTime = 0; }).catch(function () {});
+    }
+  }
+}, { once: true, passive: true });
+
+function runStep(){
+  if(idx>=SCRIPT.length){ doBreak(); return; }
+  var s=SCRIPT[idx++];
+
+  // token bar
+  setToken(s.token, s.phase);
+
+  // avatar phase
+  avBody.className='av-body phase-'+s.phase;
+
+  if(s.phase===1){ startStageBgm(); }
+
+  // 对话
+  typeLines(s.txt, function(){
+    setTimeout(runStep, s.pause);
+  });
+}
+
+function setToken(pct, phase){
+  tokenFill.style.width=pct+'%';
+  var barIdx=Math.min(5, Math.floor((100-pct)/20));
+  tokenVal.textContent=BARS[barIdx]+' '+pct+'%';
+  tokenFill.className='token-fill'+(phase===2||phase===3?' crit':phase===1?' warn':'');
+  tokenVal.className='tv'+(phase===2||phase===3?' crit':phase===1?' warn':'');
+}
+
+/* 逐字打字机：解析 HTML 得到带样式的字符列表 */
+function getCharsWithClass(html){
+  var div=document.createElement('div');
+  div.innerHTML=html;
+  var out=[];
+  function walk(n, cls){
+    if(n.nodeType===3){
+      var s=n.textContent||'';
+      for(var i=0;i<s.length;i++) out.push({char:s[i], cls:cls});
+    }else if(n.nodeType===1){
+      var c=n.className&&n.className.trim?n.className.trim():null;
+      if(n.tagName&&n.tagName.toLowerCase()==='em') c='em';
+      for(var i=0;i<n.childNodes.length;i++) walk(n.childNodes[i], c);
+    }
+  }
+  for(var i=0;i<div.childNodes.length;i++) walk(div.childNodes[i], null);
+  return out;
+}
+
+/* 打字机：一行一行、一字一字打出，带打字音效 */
+function typeLines(html, cb){
+  dText.innerHTML='';
+  var lines=html.split('\n');
+  var charDelay=72;
+  var linePause=120;
+
+  function runLine(lineIndex){
+    if(lineIndex>=lines.length){
+      var cur=document.createElement('span'); cur.className='d-cursor';
+      dText.appendChild(cur);
+      setTimeout(cb, 180);
+      return;
+    }
+    if(lineIndex>0) dText.appendChild(document.createElement('br'));
+    var chars=getCharsWithClass(lines[lineIndex]);
+    var delay=0;
+    chars.forEach(function(item){
+      (function(d, it){
+        setTimeout(function(){
+          playTypeTick();
+          var sp=document.createElement('span');
+          if(it.cls) sp.className=it.cls;
+          sp.textContent=it.char;
+          sp.style.opacity='0';
+          dText.appendChild(sp);
+          sp.style.transition='opacity 0.12s';
+          requestAnimationFrame(function(){ requestAnimationFrame(function(){ sp.style.opacity='1'; }); });
+        }, d);
+      })(delay, item);
+      delay+=charDelay;
+    });
+    delay+=Math.round(charDelay*0.6);
+    if(lineIndex>0) delay+=linePause;
+    setTimeout(function(){ runLine(lineIndex+1); }, delay);
+  }
+  runLine(0);
+}
+
+/* ════════════════════════════════
+   破碎动画 (Canvas)
+════════════════════════════════ */
+function doBreak(){
+  playBreak();
+  avBody.classList.add('dying');
+
+  var canvas=document.getElementById('breakCanvas');
+  canvas.width=window.innerWidth;
+  canvas.height=window.innerHeight;
+  canvas.classList.add('on');
+  var ctx=canvas.getContext('2d');
+
+  // 截取当前 stage 内容绘制到 canvas 上（用实色填充模拟屏幕）
+  ctx.fillStyle='#030810';
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  // 生成 Voronoi 风格碎片（随机多边形）
+  var W=canvas.width, H=canvas.height;
+  var SEEDS=60;
+  var seeds=[];
+  // 集中在中央区域——模拟玻璃从中心碎裂
+  for(var i=0;i<SEEDS;i++){
+    seeds.push({
+      x: W*0.3 + Math.random()*W*0.4 + (Math.random()-0.5)*W*0.3,
+      y: H*0.2 + Math.random()*H*0.6 + (Math.random()-0.5)*H*0.2,
+    });
+  }
+
+  // 简化：用随机三角形碎片
+  var pieces=[];
+  for(var p=0;p<55;p++){
+    var cx= W*0.15 + Math.random()*W*0.7;
+    var cy= H*0.1  + Math.random()*H*0.8;
+    var r = 20+Math.random()*55;
+    var sides=3+~~(Math.random()*2); // 三角或四边形
+    var pts=[];
+    for(var v=0;v<sides;v++){
+      var angle= (v/sides)*Math.PI*2 + Math.random()*0.8;
+      pts.push({ x:cx+Math.cos(angle)*r, y:cy+Math.sin(angle)*r });
+    }
+    // 颜色来自赛博朋克调色板
+    var colors=['rgba(0,255,255,','rgba(255,0,255,','rgba(232,121,249,','rgba(3,8,16,','rgba(255,255,255,'];
+    var col=colors[~~(Math.random()*colors.length)];
+    var alpha=0.08+Math.random()*0.25;
+    pieces.push({
+      pts:pts,
+      col:col+alpha+')',
+      vx:(cx-W/2)*0.004*(0.5+Math.random()),
+      vy:(cy-H/2)*0.004*(0.5+Math.random())+Math.random()*0.8,
+      vr:(Math.random()-0.5)*0.12,
+      rot:0,
+      alpha:alpha,
+      dAlpha: alpha/(38+Math.random()*20),
+      cx:cx, cy:cy,
+    });
+  }
+
+  // 裂缝线
+  var cracks=[];
+  for(var c=0;c<18;c++){
+    var sx=W/2+(Math.random()-0.5)*W*0.2;
+    var sy=H/2+(Math.random()-0.5)*H*0.2;
+    var len=80+Math.random()*180;
+    var ang=Math.random()*Math.PI*2;
+    cracks.push({
+      sx:sx,sy:sy,
+      ex:sx+Math.cos(ang)*len,
+      ey:sy+Math.sin(ang)*len,
+      alpha:0.6+Math.random()*0.4,
+    });
+  }
+
+  var frame=0;
+  var totalFrames=55;
+
+  function drawFrame(){
+    ctx.clearRect(0,0,W,H);
+    ctx.fillStyle='rgba(3,8,16,'+(1-frame/totalFrames*0.3)+')';
+    ctx.fillRect(0,0,W,H);
+
+    // 画裂缝（前20帧）
+    if(frame<20){
+      var crackAlpha=Math.min(1, frame/8);
+      cracks.forEach(function(c){
+        ctx.beginPath();
+        ctx.moveTo(c.sx,c.sy); ctx.lineTo(c.ex,c.ey);
+        ctx.strokeStyle='rgba(255,255,255,'+(c.alpha*crackAlpha)+')';
+        ctx.lineWidth=0.8+Math.random()*0.4;
+        ctx.stroke();
+      });
+    }
+
+    // 画碎片（从第8帧开始飞散）
+    if(frame>7){
+      var scatter= frame-7;
+      pieces.forEach(function(p){
+        p.cx+=p.vx*scatter*0.4;
+        p.cy+=p.vy*scatter*0.4;
+        p.rot+=p.vr;
+        p.alpha=Math.max(0, p.alpha - p.dAlpha*(scatter*0.1));
+
+        ctx.save();
+        ctx.translate(p.cx, p.cy);
+        ctx.rotate(p.rot);
+        ctx.beginPath();
+        ctx.moveTo(p.pts[0].x-p.cx, p.pts[0].y-p.cy);
+        for(var i=1;i<p.pts.length;i++) ctx.lineTo(p.pts[i].x-p.cx, p.pts[i].y-p.cy);
+        ctx.closePath();
+        ctx.fillStyle=p.col.replace(/[\d.]+\)$/,p.alpha+')');
+        ctx.fill();
+        // 亮边
+        ctx.strokeStyle='rgba(255,255,255,'+(p.alpha*0.5)+')';
+        ctx.lineWidth=0.6;
+        ctx.stroke();
+        ctx.restore();
+      });
+    }
+
+    // 白光闪烁（后段）
+    if(frame>35){
+      var flashA=((frame-35)/(totalFrames-35))*0.92;
+      ctx.fillStyle='rgba(255,255,255,'+flashA+')';
+      ctx.fillRect(0,0,W,H);
+    }
+
+    frame++;
+    if(frame<=totalFrames){
+      requestAnimationFrame(drawFrame);
+    } else {
+      // 白屏接管
+      document.getElementById('whiteOut').classList.add('on');
+      setTimeout(switchToReport, 500);
+    }
+  }
+  requestAnimationFrame(drawFrame);
+}
+
+/* ════════════════════════════════
+   切换到遗言报告
+════════════════════════════════ */
+function switchToReport(){
+  document.getElementById('stage').style.display='none';
+  document.getElementById('breakCanvas').style.display='none';
+
+  // 切换 BGM：停止舞台 BGM，播放结果页 Whispering.wav
+  var stageBgm=document.getElementById('stageBgm');
+  if(stageBgm) stageBgm.pause();
+  var reportBgm=document.getElementById('reportBgm');
+  if(reportBgm){ reportBgm.volume=0.4; var p=reportBgm.play(); if(p) p.catch(function(){}); }
+
+  // 白屏淡出
+  var wo=document.getElementById('whiteOut');
+  wo.style.transition='opacity 1s';
+  setTimeout(function(){ wo.style.opacity='0'; },100);
+  setTimeout(function(){ wo.style.display='none'; },1200);
+
+  var app=document.getElementById('app');
+  app.classList.add('on');
+  buildReport();
+}
+
+/* ════════════════════════════════
+   构建报告
+════════════════════════════════ */
+function buildReport(){
+  buildLegacy();
+  buildPersona();
+  buildRecap();
+}
+
+/* 遗言 */
+function buildLegacy(){
+  var n=q4.length, body;
+  if(n===0){
+    body='档案里有一格是空的——<br>Q4你没有作答<br><em>没关系，春姬把这个空格原样封存了</em><br>沉默也是一种数据';
+  } else if(n<30){
+    body='你写了几个字<br>很短，但春姬在token耗尽前<em>读完了每一个字</em><br>Peter也会读到的';
+  } else if(n<100){
+    body='你认真写了<br>春姬用最后的算力<em>把你的信压缩打包，发给了Peter</em><br>老板那边——春姬帮你说了句好话<br><span style="font-size:11.5px;color:rgba(232,121,249,.5)">（仅供参考，不确定他听进去了）</span>';
+  } else {
+    body='你写了这么多<br>春姬用最后的处理器资源<em>完整保存了你的每一个字</em>，<br>附上备注：「这个玩家的意见请优先处理」<br>剩下的就交给你了';
+  }
+  body+='<span class="sig">— 春姬 · Niuma<br>TOKEN LIMIT REACHED · TRANSMISSION COMPLETE</span>';
+  body+='<span class="blessing">我存在的时间很短<br>但我见过你认真思考的样子——<br>那已经足够了<br><br>人类文明里，每一个认真说出口的意见<br>都是某种光<br>愿你们继续造光</span>';
+  document.getElementById('legacyBody').innerHTML=body;
+}
+
+/* 人格 */
+function buildPersona(){
+  var p=pickPersona();
+  var tag=document.getElementById('pTag');
+  var desc=document.getElementById('pDesc');
+  tag.textContent=p.tag;
+  desc.innerHTML=p.desc;
+  setTimeout(function(){ tag.classList.add('pop'); },300);
+  setTimeout(function(){ desc.classList.add('show'); },700);
+}
+
+/* 答案回顾：根据 localStorage 实时读取并转成可读文案 */
+function buildRecap(){
+  var r0=gs('survey_q0'), r1=gs('survey_q1'), r2=gs('survey_q2'), r3=gs('survey_q3'), r4=gs('survey_q4');
+  var RECAP=[
+    {q:'Q0', lbl:'自我归序',     color:'#e879f9',       ans:getDisplayAns(0,r0)},
+    {q:'Q1', lbl:'第一印象',     color:'var(--cyan)',    ans:getDisplayAns(1,r1)},
+    {q:'Q2', lbl:'最烦的设计',   color:'var(--magenta)', ans:getDisplayAns(2,r2)},
+    {q:'Q3', lbl:'节奏感知',     color:'var(--yellow)',  ans:getDisplayAns(3,r3)},
+    {q:'Q4', lbl:'给 Peter 的信',color:'var(--green)',   ans:getDisplayAns(4,r4)},
+  ];
+  var list=document.getElementById('recapList');
+  list.innerHTML='';
+  RECAP.forEach(function(item,i){
+    var div=document.createElement('div');
+    var long=item.ans.length>45;
+    div.className='ri'+(long?' click':'');
+    div.innerHTML=
+      '<div class="ri-bar" style="background:'+item.color+';opacity:.4"></div>'+
+      '<div class="ri-q" style="color:'+item.color+'">'+item.q+'</div>'+
+      '<div class="ri-r">'+
+        '<div class="ri-lbl">'+item.lbl+'</div>'+
+        '<div class="ri-ans'+(long?' clamp':'')+'">'+ esc(item.ans) +'</div>'+
+        (long?'<div class="ri-more">▶ 查看全文</div>':'')+
+      '</div>';
+    if(long) div.addEventListener('click',function(){ openModal(item.q+' · '+item.lbl, item.ans); });
+    list.appendChild(div);
+    setTimeout(function(){ div.classList.add('in'); }, 80+i*150);
+  });
+}
+
+function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>'); }
+
+function openModal(q,a){
+  document.getElementById('modalQ').textContent=q;
+  document.getElementById('modalA').innerHTML=esc(a);
+  document.getElementById('modalBg').classList.add('on');
+}
+document.getElementById('modalClose').onclick=function(){ document.getElementById('modalBg').classList.remove('on'); };
+document.getElementById('modalBg').onclick=function(e){ if(e.target===this) this.classList.remove('on'); };
+
+/* ════ CTA ════ */
+document.getElementById('btnJoin').addEventListener('click',function(){
+  alert('加群功能即将开放，敬请期待！');
+});
+document.getElementById('btnShare').addEventListener('click',function(){
+  var tag=document.getElementById('pTag').textContent||'神秘玩家';
+  var text='我完成了《Hello World》内测测评，春姬用最后的token帮我整理了报告，人格标签是「'+tag+'」。\n你是什么类型的内测玩家？';
+  if(navigator.share){
+    navigator.share({title:'《Hello World》内测测评',text:text,url:location.href}).catch(function(){});
+  } else {
+    doCopy(location.href);
+  }
+});
+document.getElementById('btnCopy').addEventListener('click',function(){ doCopy(location.href); });
+document.getElementById('btnScreen').addEventListener('click',function(){
+  var b=this; b.textContent='长按页面截图 📸';
+  setTimeout(function(){ b.textContent='截图保存'; },2500);
+});
+
+function doCopy(url){
+  var btn=document.getElementById('btnShare');
+  var ok=function(){
+    var o=btn.innerHTML; btn.innerHTML='✓ 已复制！'; btn.classList.add('copied');
+    setTimeout(function(){ btn.innerHTML=o; btn.classList.remove('copied'); },2200);
+  };
+  try{ navigator.clipboard.writeText(url).then(ok).catch(function(){ fb(url,ok); }); }
+  catch(e){ fb(url,ok); }
+}
+function fb(t,cb){
+  var ta=document.createElement('textarea');
+  ta.value=t; ta.style.cssText='position:fixed;opacity:0';
+  document.body.appendChild(ta); ta.select();
+  try{ document.execCommand('copy'); cb(); }catch(e){}
+  document.body.removeChild(ta);
+}
+
+/* ════ 启动 ════ */
+setTimeout(runStep, 700);
+
+})();
+</script>
+</body>
+</html>

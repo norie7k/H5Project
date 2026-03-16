@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Q0 初诊登记 · 殖装适应性体检</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{--cyan:#00ffff;--magenta:#ff00ff;--yellow:#ffff00;--bg:#030810;--panel:rgba(6,14,30,0.96)}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);color:#e0f0ff;font-family:'Noto Sans SC',sans-serif;overflow-x:hidden}
+body{display:flex;flex-direction:column;align-items:center;min-height:100vh}
+#scanline{position:fixed;inset:0;pointer-events:none;z-index:9000;background:repeating-linear-gradient(0deg,transparent 0,transparent 2px,rgba(0,0,0,.09) 2px,rgba(0,0,0,.09) 3px)}
+.bg-glow{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:0}
+.bg-glow::before{content:'';position:absolute;width:700px;height:700px;border-radius:50%;background:radial-gradient(circle,#00ffff,transparent);opacity:.04;top:-280px;left:-280px;filter:blur(80px)}
+.bg-glow::after{content:'';position:absolute;width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,#ff00ff,transparent);opacity:.04;bottom:-160px;right:-160px;filter:blur(80px)}
+#app{position:relative;z-index:10;max-width:560px;width:100%;display:flex;flex-direction:column;padding:16px 16px 40px}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes slideUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes blink{50%{opacity:0}}
+
+/* INTRO */
+.intro-overlay{position:fixed;inset:0;z-index:800;background:rgba(3,8,16,.93);display:flex;align-items:center;justify-content:center;padding:20px;animation:fadeIn .3s forwards}
+.intro-overlay.hidden{display:none}
+.intro-modal{max-width:420px;width:100%;background:var(--panel);border:1px solid rgba(0,255,255,.22);box-shadow:0 0 60px rgba(0,255,255,.07),inset 0 0 40px rgba(0,0,0,.4);padding:24px 22px 20px;position:relative;animation:slideUp .4s .1s both}
+.intro-modal::before,.intro-modal::after,.intro-modal .bl,.intro-modal .br{content:'';position:absolute;width:16px;height:16px}
+.intro-modal::before{top:0;left:0;border-top:2px solid var(--cyan);border-left:2px solid var(--cyan)}
+.intro-modal::after{top:0;right:0;border-top:2px solid var(--cyan);border-right:2px solid var(--cyan)}
+.intro-modal .bl{bottom:0;left:0;border-bottom:2px solid var(--magenta);border-left:2px solid var(--magenta)}
+.intro-modal .br{bottom:0;right:0;border-bottom:2px solid var(--magenta);border-right:2px solid var(--magenta)}
+.intro-speaker{font-family:'Press Start 2P',monospace;font-size:7px;color:rgba(232,121,249,.8);letter-spacing:.15em;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.intro-speaker::before{content:'';width:6px;height:6px;background:var(--magenta);border-radius:50%;box-shadow:0 0 8px var(--magenta);animation:blink .8s step-end infinite}
+.intro-bubble{font-size:13.5px;line-height:1.85;color:rgba(224,240,255,.9);margin-bottom:22px;border-left:2px solid rgba(0,255,255,.2);padding-left:12px}
+.intro-bubble em{color:var(--cyan);font-style:normal}
+.intro-btn{font-family:'Press Start 2P',monospace;font-size:8px;color:var(--cyan);border:1px solid rgba(0,255,255,.5);padding:12px 28px;background:rgba(0,255,255,.08);cursor:pointer;display:block;margin:0 auto;transition:background .2s,box-shadow .2s;letter-spacing:.05em}
+.intro-btn:hover{background:rgba(0,255,255,.18);box-shadow:0 0 20px rgba(0,255,255,.25)}
+
+/* MAIN */
+.q1-main{display:none;flex-direction:column;gap:14px}
+.q1-main.visible{display:flex;animation:slideUp .4s forwards}
+
+/* PROGRESS */
+.q-progress{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.q-progress-label{font-family:'Press Start 2P',monospace;font-size:8px;color:var(--cyan);letter-spacing:.12em;text-shadow:0 0 10px rgba(0,255,255,.5);flex-shrink:0}
+.q-progress-track{flex:1;height:8px;background:rgba(0,255,255,.08);border:1px solid rgba(255,255,255,.25);border-radius:2px;overflow:hidden}
+.q-progress-fill{height:100%;border-radius:1px;background:linear-gradient(90deg,var(--cyan),var(--magenta),var(--yellow));box-shadow:0 0 12px rgba(0,255,255,.4)}
+.q-progress-num{font-family:'Press Start 2P',monospace;font-size:9px;color:var(--magenta);letter-spacing:.08em;text-shadow:0 0 10px rgba(255,0,255,.5);flex-shrink:0}
+
+/* HEADER */
+.q-header{display:flex;flex-direction:column;gap:10px;align-items:center;text-align:center}
+.q-tag{font-family:'Press Start 2P',monospace;font-size:clamp(9px,2.2vw,11px);letter-spacing:.1em;display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap}
+.q-tag-num{color:var(--cyan);text-shadow:0 0 8px rgba(0,255,255,.4)}
+.q-tag-sep{color:var(--cyan);opacity:.9}
+.q-tag-cat{color:var(--magenta);text-shadow:0 0 8px rgba(255,0,255,.4);font-size:0.95em}
+.q-text{font-size:clamp(18px,4.5vw,22px);font-weight:600;color:rgba(0,255,255,.98);line-height:1.5;text-shadow:0 0 20px rgba(0,255,255,.5),0 0 40px rgba(0,255,255,.2);font-family:'Noto Sans SC',sans-serif;letter-spacing:.06em}
+.q-hint{font-size:14px;font-weight:500;color:rgba(255,255,0,.95);font-family:'Noto Sans SC',sans-serif;text-shadow:0 0 12px rgba(255,255,0,.5);letter-spacing:.04em}
+
+/* SYRINGE STAGE */
+.syringe-stage{background:rgba(4,10,22,.7);border:1px solid rgba(255,255,255,.05);padding:20px 12px 24px;position:relative;overflow:hidden;display:flex;flex-direction:column;gap:16px}
+.syringe-stage::before{content:'';position:absolute;inset:0;background-image:radial-gradient(circle,rgba(255,255,255,.03) 1px,transparent 1px);background-size:10px 10px;pointer-events:none}
+
+/* VEIN TARGETS */
+.vein-row{display:flex;gap:12px;justify-content:center}
+.vein-cell{flex:1;max-width:240px;display:flex;flex-direction:column;gap:0;padding:12px 12px 10px;background:rgba(6,14,30,.9);border:1px solid rgba(255,255,255,.08);cursor:pointer;transition:border-color .35s,box-shadow .35s,background .35s;position:relative;-webkit-tap-highlight-color:transparent;user-select:none}
+.vein-cell::before,.vein-cell::after{content:'';position:absolute;width:10px;height:10px;opacity:.3;transition:opacity .3s}
+.vein-cell::before{top:0;left:0;border-top:1px solid var(--cell-color,rgba(255,255,255,.2));border-left:1px solid var(--cell-color,rgba(255,255,255,.2))}
+.vein-cell::after{bottom:0;right:0;border-bottom:1px solid var(--cell-color,rgba(255,255,255,.2));border-right:1px solid var(--cell-color,rgba(255,255,255,.2))}
+.vein-cell:hover{border-color:rgba(255,255,255,.18);background:rgba(6,18,38,.9)}
+.vein-cell.selected{border-color:var(--cell-color);box-shadow:0 0 24px var(--cell-glow);background:rgba(6,18,38,.95)}
+.vein-cell.selected::before,.vein-cell.selected::after{opacity:1}
+.vein-header{display:flex;align-items:baseline;gap:8px;margin-bottom:6px}
+.vein-key{font-family:'Press Start 2P',monospace;font-size:10px;color:rgba(255,255,255,.22);transition:color .3s;flex-shrink:0}
+.vein-cell.selected .vein-key{color:var(--cell-color);text-shadow:0 0 10px var(--cell-color)}
+.vein-title{font-size:15px;font-weight:600;color:rgba(224,240,255,.55);font-family:'Noto Sans SC',sans-serif;transition:color .3s;letter-spacing:.04em}
+.vein-cell.selected .vein-title{color:rgba(224,240,255,.95)}
+.vein-quote{font-size:12px;color:rgba(224,240,255,.38);font-family:'Noto Sans SC',sans-serif;line-height:1.6;letter-spacing:.03em;margin-bottom:8px;transition:color .3s;word-break:keep-all}
+.vein-cell.selected .vein-quote{color:rgba(224,240,255,.75)}
+.vein-divider{width:100%;height:1px;background:linear-gradient(90deg,var(--cell-color,rgba(255,255,255,.1)),transparent);opacity:.25;margin-bottom:7px;transition:opacity .3s}
+.vein-cell.selected .vein-divider{opacity:.6}
+.vein-footer{display:flex;align-items:center;justify-content:space-between;gap:6px}
+.vein-case{font-family:'Press Start 2P',monospace;font-size:6px;color:rgba(255,255,255,.15);letter-spacing:.08em;transition:color .3s;line-height:1.4}
+.vein-cell.selected .vein-case{color:var(--cell-color);opacity:.7}
+.vein-bar-wrap{width:52px;flex-shrink:0;height:6px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:1px;position:relative;overflow:hidden}
+.vein-bar-fill{height:100%;width:0%;border-radius:1px;position:absolute;left:0;top:0;transition:width .6s cubic-bezier(.4,0,.2,1)}
+.vein-cell.selected .vein-bar-fill{background:var(--cell-color);box-shadow:0 0 6px var(--cell-color)}
+@keyframes veinPulse{0%,100%{box-shadow:inset 0 0 0 1px transparent}50%{box-shadow:inset 0 0 0 1px var(--cell-color,rgba(255,255,255,.2))}}
+.vein-cell.selected .vein-bar-wrap{animation:veinPulse 1.4s ease-in-out infinite}
+
+/* EGG A card shake */
+@keyframes cardShakeLo{0%,100%{transform:translateX(0)}20%{transform:translateX(-2px) rotate(-.4deg)}40%{transform:translateX(2px) rotate(.3deg)}60%{transform:translateX(-1.5px)}80%{transform:translateX(1.5px)}}
+@keyframes cardShakeHi{0%,100%{transform:translateX(0)}10%{transform:translateX(-4px) rotate(-.7deg)}30%{transform:translateX(4px) rotate(.6deg)}50%{transform:translateX(-3px)}70%{transform:translateX(3px) rotate(.4deg)}90%{transform:translateX(-3px)}}
+.vein-cell.shake-lo{animation:cardShakeLo .35s ease-in-out infinite}
+.vein-cell.shake-hi{animation:cardShakeHi .17s ease-in-out infinite}
+
+/* CANVAS ZONE */
+.canvas-zone{display:flex;flex-direction:column;align-items:center;gap:8px}
+#syringeCanvas{display:block;touch-action:none;cursor:default;width:100%;max-width:420px}
+#syringeCanvas.can-drag{cursor:grab}
+#syringeCanvas.dragging{cursor:grabbing}
+.inject-track{width:100%;max-width:360px;height:5px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:2px;overflow:hidden}
+.inject-track-fill{height:100%;width:0%;border-radius:2px;transition:background .3s,box-shadow .3s}
+.canvas-hint{font-family:'Press Start 2P',monospace;font-size:7px;letter-spacing:.08em;text-align:center;transition:color .3s;opacity:.7}
+
+/* NPC */
+.npc-comment{background:var(--panel);border:1px solid rgba(0,255,255,.1);border-left:2px solid rgba(0,255,255,.3);padding:10px 14px 10px 12px;font-size:13px;color:rgba(224,240,255,.72);line-height:1.75;min-height:48px;transition:opacity .22s;position:relative}
+.npc-comment::before{content:'春姬 · Niuma';font-family:'Press Start 2P',monospace;font-size:6px;color:rgba(232,121,249,.65);letter-spacing:.1em;display:block;margin-bottom:6px}
+.npc-comment.fade{opacity:0}
+.npc-comment em{color:var(--cyan);font-style:normal}
+
+/* TRANSITION */
+#transition-screen{position:fixed;inset:0;z-index:3200;background:rgba(3,8,16,.97);display:none;flex-direction:column;align-items:center;justify-content:center;gap:20px}
+#transition-screen.open{display:flex;animation:fadeIn .4s forwards}
+.ts-eva{font-family:'Press Start 2P',monospace;font-size:7px;color:rgba(232,121,249,.7);letter-spacing:.1em;display:flex;align-items:center;gap:8px}
+.ts-eva::before{content:'';width:5px;height:5px;background:var(--magenta);border-radius:50%;box-shadow:0 0 6px var(--magenta);animation:blink .7s step-end infinite}
+.ts-line{font-family:'Noto Sans SC',sans-serif;font-size:15px;color:rgba(224,240,255,.85);letter-spacing:.06em;text-align:center;line-height:1.9}
+.ts-line em{color:var(--cyan);font-style:normal}
+.ts-dots{display:flex;gap:8px;margin-top:4px}
+.ts-dot{width:5px;height:5px;border-radius:50%;background:rgba(0,255,255,.2);animation:tsDot 1.2s ease-in-out infinite}
+.ts-dot:nth-child(2){animation-delay:.2s}
+.ts-dot:nth-child(3){animation-delay:.4s}
+@keyframes tsDot{0%,100%{background:rgba(0,255,255,.2);transform:scale(1)}50%{background:var(--cyan);transform:scale(1.4);box-shadow:0 0 8px var(--cyan)}}
+
+</style>
+</head>
+<body>
+<audio id="q0-bgm" loop preload="auto"><source src="../Q1/贯穿所有的bgm.mp3" type="audio/mpeg"></audio>
+<div id="scanline"></div><div class="bg-glow"></div>
+
+<!-- INTRO -->
+<div class="intro-overlay" id="introOverlay">
+  <div class="intro-modal">
+    <div class="bl"></div><div class="br"></div>
+    <div class="intro-speaker">春姬 · Niuma</div>
+    <div class="intro-bubble">
+      <em>「自我归序」</em>——旧时代人类最温柔的群体默契<br><br>
+      那时没有数据标定和先天归类，只凭经历与心境，把自己放进合适的位置，美其名曰<em>「自知」</em><br><br>
+      不必慌张，不必迎合，轻轻选出属于你的那一种轨迹<br><br>
+    </div>
+    <button class="intro-btn" id="introBtn">开始辨识</button>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div id="app">
+  <div class="q1-main" id="q1Main">
+    <div class="q-progress">
+      <span class="q-progress-label">PROGRESS</span>
+      <div class="q-progress-track"><div class="q-progress-fill" style="width:20%"></div></div>
+      <span class="q-progress-num">1/5</span>
+    </div>
+    <div class="q-header">
+      <div class="q-tag">
+        <span class="q-tag-num">QUESTION_01</span>
+        <span class="q-tag-sep">//</span>
+        <span class="q-tag-cat">初诊登记</span>
+      </div>
+      <div class="q-text">请问你本次是第几次参加测试呢？</div>
+      <div class="q-hint">▷ 选择选项后推动针筒完成注射</div>
+    </div>
+
+    <div class="syringe-stage">
+      <div class="vein-row" id="veinRow"></div>
+      <div class="npc-comment" id="npcComment">选择你的情况，然后<em>向右推动针筒推杆</em>完成注射。</div>
+      <div class="canvas-zone">
+        <canvas id="syringeCanvas" height="90"></canvas>
+        <div class="inject-track"><div class="inject-track-fill" id="trackFill"></div></div>
+        <div class="canvas-hint" id="canvasHint" style="color:rgba(255,255,255,.2)">选择选项后解锁注射</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TRANSITION -->
+<div id="transition-screen">
+  <div class="ts-eva">春姬 · Niuma</div>
+  <div class="ts-line">自我归序已记录<br>正在进入<em>检测序列</em></div>
+  <div class="ts-dots"><div class="ts-dot"></div><div class="ts-dot"></div><div class="ts-dot"></div></div>
+</div>
+
+<script>
+(function(){
+'use strict';
+
+var OPTIONS=[
+  {key:'A',title:'初诊',quote:'「有点紧张你别乱动」',caseNum:'CASE #0001',caseTag:'NEW',      label:'A · 初诊',color:'#00ffff',rgb:[0,255,255],  glow:'rgba(0,255,255,.32)'},
+  {key:'B',title:'复诊',quote:'「脾气很大你忍一下」',caseNum:'CASE #????',caseTag:'RETURNING',label:'B · 复诊',color:'#ff00ff',rgb:[255,0,255],glow:'rgba(255,0,255,.3)'},
+];
+var NPC={
+  idle:'选择你的情况，然后<em>向右推动针筒推杆</em>完成注射。',
+  A:'<em>初次接入</em>……放轻松，我手很稳的。',
+  B:'复诊用户——哦，<em>老熟人</em>了。脾气大没关系，针扎下去就好了。',
+  Bthick:'……你的<em>血管</em>比上次更难找了。这根针不够用，换一根。',
+  // 推动过程中的俏皮/双关文案（按进度切换）
+  push:[
+    '慢慢来……<em>别急</em>，越急越进不去。',
+    '对，就这样……<em>一点一点</em>往里送。',
+    '推得越深，<em>液体</em>才进得越到位哦。',
+    '快到底了……再坚持一下，<em>马上就好</em>。',
+    '嗯……<em>到底了</em>。这次量很足。',
+  ],
+};
+
+// ── AUDIO ──────────────────────────────────────
+function mkCtx(){return new(window.AudioContext||window.webkitAudioContext)();}
+function beep(freq,dur,gain,type){try{var c=mkCtx(),n=c.currentTime,o=c.createOscillator(),g=c.createGain();o.type=type||'sine';o.frequency.setValueAtTime(freq,n);g.gain.setValueAtTime(0,n);g.gain.linearRampToValueAtTime(gain,n+.02);g.gain.linearRampToValueAtTime(0,n+dur);o.connect(g);g.connect(c.destination);o.start(n);o.stop(n+dur+.02);}catch(e){}}
+function playClick(){beep(880,.06,.35);}
+function playDragTick(){beep(300,.05,.06);}
+function playChime(){try{var c=mkCtx(),n=c.currentTime;[880,1100,1320].forEach(function(f,i){var o=c.createOscillator(),g=c.createGain();o.type='sine';o.frequency.value=f;g.gain.setValueAtTime(0,n+i*.1);g.gain.linearRampToValueAtTime(.26,n+i*.1+.02);g.gain.linearRampToValueAtTime(0,n+i*.1+.2);o.connect(g);g.connect(c.destination);o.start(n+i*.1);o.stop(n+i*.1+.25);});}catch(e){}}
+function playInject(){beep(1400,.2,.28);setTimeout(function(){beep(90,.24,.1,'sawtooth');},40);}
+
+// ── CANVAS ─────────────────────────────────────
+var cv=document.getElementById('syringeCanvas');
+var cx=cv.getContext('2d');
+var DPR=window.devicePixelRatio||1;
+
+// Logical dimensions (at 420px wide)
+var LW=420,LH=90;
+// Syringe parts (logical px)
+var S={
+  // barrel
+  bx:70,by:28,bw:220,bh:30,br:4,
+  // hub
+  hx:290,hy:30,hw:26,hh:26,hr:3,
+  // needle (x start, base center y, width)
+  nx:316,ny:43,nw:56,
+  // graduation x positions
+  gr:[100,125,150,175,200,225,250,275],
+  // plunger travel (left edge of shaft)
+  pMin:10, pMax:48,
+  // shaft size
+  sw:18,sh:32,sr:3,
+  // flange
+  fw:28,fh:6,fr:2,
+};
+var TRAVEL=S.pMax-S.pMin; // 38px logical
+
+function resizeCanvas(){
+  var par=cv.parentElement;
+  var w=Math.min(par.offsetWidth,420);
+  cv.style.width=w+'px';
+  var h=Math.round(w*LH/LW);
+  cv.style.height=h+'px';
+  cv.width=w*DPR;
+  cv.height=h*DPR;
+  drawSyringe();
+}
+window.addEventListener('resize',resizeCanvas);
+
+// ── STATE ──────────────────────────────────────
+var selIdx=null,locked=false;
+var plungerT=0;       // 0=back, 1=fully pushed
+var needleH=6;        // egg B
+var nGrowRaf=null;
+var tremorOn=false,tremorHi=false,tremorPh=0,tremorRaf=null;
+var dragging=false,dragX0=0,dragT0=0;
+var lastDragTickT=0;
+
+// ── DRAW ───────────────────────────────────────
+function col(){return selIdx===null?'#334455':OPTIONS[selIdx].color;}
+function rgb(){return selIdx===null?[51,68,85]:OPTIONS[selIdx].rgb;}
+function alpha(){return selIdx===null?0.3:1;}
+
+function rr(c,x,y,w,h,r){
+  c.beginPath();c.moveTo(x+r,y);c.lineTo(x+w-r,y);c.quadraticCurveTo(x+w,y,x+w,y+r);
+  c.lineTo(x+w,y+h-r);c.quadraticCurveTo(x+w,y+h,x+w-r,y+h);c.lineTo(x+r,y+h);
+  c.quadraticCurveTo(x,y+h,x,y+h-r);c.lineTo(x,y+r);c.quadraticCurveTo(x,y,x+r,y);c.closePath();
+}
+
+function drawSyringe(){
+  var W=cv.width/DPR,H=cv.height/DPR;
+  var sc=W/LW;
+  cx.clearRect(0,0,cv.width,cv.height);
+  cx.save();
+  cx.scale(sc*DPR,sc*DPR);
+
+  // tremor transform
+  var tx=0,ty=0,trot=0;
+  if(tremorOn){
+    var amp=tremorHi?8:3.5;
+    tx=Math.sin(tremorPh*2.8)*amp+Math.sin(tremorPh*5.3)*amp*.35;
+    ty=Math.sin(tremorPh*3.4)*amp*.45;
+    trot=Math.sin(tremorPh*2.2)*(tremorHi?2.2:.9);
+  }
+  cx.save();
+  cx.translate(LW/2+tx,LH/2+ty);cx.rotate(trot*Math.PI/180);cx.translate(-LW/2,-LH/2);
+
+  var c=col(),a=alpha(),r=rgb();
+
+  // ─ needle glow ─
+  if(selIdx!==null){
+    var tipX=S.nx+S.nw,tipY=S.ny;
+    var gr2=cx.createRadialGradient(tipX,tipY,0,tipX,tipY,18+plungerT*14);
+    gr2.addColorStop(0,'rgba('+r[0]+','+r[1]+','+r[2]+','+(0.28+plungerT*.45)+')');
+    gr2.addColorStop(1,'rgba('+r[0]+','+r[1]+','+r[2]+',0)');
+    cx.fillStyle=gr2;cx.beginPath();cx.arc(tipX,tipY,28+plungerT*14,0,Math.PI*2);cx.fill();
+  }
+
+  // ─ needle shaft ─
+  var nh=needleH,ny2=S.ny-nh/2;
+  cx.save();cx.globalAlpha=a;
+  cx.fillStyle='#7a8fa0';rr(cx,S.nx,ny2,S.nw-8,nh,1);cx.fill();
+  // needle tip
+  cx.beginPath();cx.moveTo(S.nx+S.nw-8,ny2);cx.lineTo(S.nx+S.nw,S.ny);cx.lineTo(S.nx+S.nw-8,ny2+nh);cx.closePath();cx.fillStyle='#9ab0c2';cx.fill();
+  cx.restore();
+
+  // ─ hub ─
+  cx.save();cx.globalAlpha=a;cx.fillStyle='#0c1d2c';cx.strokeStyle=c;cx.lineWidth=1;
+  rr(cx,S.hx,S.hy,S.hw,S.hh,S.hr);cx.fill();cx.stroke();cx.restore();
+
+  // ─ barrel ─
+  cx.save();cx.globalAlpha=a;cx.fillStyle='#09162a';cx.strokeStyle=c;cx.lineWidth=1.5;
+  rr(cx,S.bx,S.by,S.bw,S.bh,S.br);cx.fill();cx.stroke();cx.restore();
+
+  // ─ liquid ─
+  if(selIdx!==null){
+    var lw=Math.max(2,(S.bw-6)*(1-plungerT));
+    cx.save();
+    cx.beginPath();rr(cx,S.bx+2,S.by+2,S.bw-4,S.bh-4,2);cx.clip();
+    var lg=cx.createLinearGradient(S.bx+3,0,S.bx+3+lw,0);
+    lg.addColorStop(0,'rgba('+r[0]+','+r[1]+','+r[2]+',.38)');
+    lg.addColorStop(1,'rgba('+r[0]+','+r[1]+','+r[2]+',.12)');
+    cx.fillStyle=lg;rr(cx,S.bx+3,S.by+3,lw,S.bh-6,2);cx.fill();
+    cx.restore();
+  }
+
+  // ─ grad marks ─
+  cx.save();cx.globalAlpha=a*.3;cx.strokeStyle=c;cx.lineWidth=0.8;
+  S.gr.forEach(function(gx){cx.beginPath();cx.moveTo(gx,S.by+4);cx.lineTo(gx,S.by+S.bh-4);cx.stroke();});
+  cx.restore();
+
+  // ─ plunger ─
+  var px=S.pMin+plungerT*TRAVEL;
+  var cy2=LH/2;
+  // flange top
+  cx.save();cx.globalAlpha=a*.85;cx.fillStyle=c;
+  rr(cx,px-S.fw/2+S.sw/2,cy2-S.sh/2-S.fh+2,S.fw,S.fh,S.fr);cx.fill();
+  rr(cx,px-S.fw/2+S.sw/2,cy2+S.sh/2-2,S.fw,S.fh,S.fr);cx.fill();
+  cx.restore();
+  // shaft
+  cx.save();cx.globalAlpha=a*.8;cx.fillStyle='#07121e';cx.strokeStyle=c;cx.lineWidth=1;
+  rr(cx,px,cy2-S.sh/2,S.sw,S.sh,S.sr);cx.fill();cx.stroke();cx.restore();
+  // handle knob
+  cx.save();cx.globalAlpha=a*.75;cx.fillStyle=c;
+  rr(cx,px-11,cy2-8,11,16,2);cx.fill();
+  // grip lines
+  cx.globalAlpha=a*.3;cx.fillStyle='#000101';
+  for(var li=0;li<3;li++){rr(cx,px-9,cy2-4+li*3.5,7,1.5,.5);cx.fill();}
+  cx.restore();
+
+  // ─ push arrow hint ─
+  if(selIdx!==null&&plungerT<.06&&!locked){
+    cx.save();cx.globalAlpha=.4+.25*Math.sin(tremorPh*1.8);cx.strokeStyle=c;cx.lineWidth=1.2;
+    var ax=px+S.sw+16,ay=cy2;
+    cx.beginPath();cx.moveTo(ax,ay);cx.lineTo(ax+24,ay);
+    cx.moveTo(ax+19,ay-5);cx.lineTo(ax+24,ay);cx.lineTo(ax+19,ay+5);cx.stroke();
+    cx.restore();
+  }
+
+  // ─ locked dim ─
+  if(selIdx===null){
+    cx.save();cx.fillStyle='rgba(3,8,16,.35)';rr(cx,0,0,LW,LH,0);cx.fill();
+    cx.font='7px monospace';cx.fillStyle='rgba(255,255,255,.18)';cx.textAlign='center';
+    cx.fillText('[ SELECT OPTION TO UNLOCK ]',LW/2,LH/2+3);
+    cx.restore();
+  }
+
+  cx.restore(); // tremor
+  cx.restore(); // scale
+}
+
+// ── TREMOR LOOP ────────────────────────────────
+function tremorLoop(){
+  tremorPh+=tremorHi?.25:.09;
+  drawSyringe();
+  if(tremorOn)tremorRaf=requestAnimationFrame(tremorLoop);
+}
+function startTremor(hi){
+  tremorOn=true;tremorHi=hi;
+  if(!tremorRaf)tremorRaf=requestAnimationFrame(tremorLoop);
+}
+function stopTremor(){
+  tremorOn=false;tremorHi=false;
+  if(tremorRaf){cancelAnimationFrame(tremorRaf);tremorRaf=null;}
+  drawSyringe();
+}
+
+// ── NEEDLE GROW ────────────────────────────────
+function needleGrowStep(){
+  needleH=Math.min(needleH+.18,13);drawSyringe();
+  if(needleH<13&&selIdx===1&&!locked)nGrowRaf=requestAnimationFrame(needleGrowStep);
+  else nGrowRaf=null;
+}
+function startNeedleGrow(){needleH=6;if(nGrowRaf){cancelAnimationFrame(nGrowRaf);nGrowRaf=null;}nGrowRaf=requestAnimationFrame(needleGrowStep);}
+function stopNeedleGrow(){if(nGrowRaf){cancelAnimationFrame(nGrowRaf);nGrowRaf=null;}needleH=6;}
+
+// ── HIT TEST ───────────────────────────────────
+function hit(lx,ly){
+  var px=S.pMin+plungerT*TRAVEL,cy2=LH/2;
+  return lx>=px-14&&lx<=px+S.sw+18&&ly>=cy2-20&&ly<=cy2+20;
+}
+function toLogical(ex,ey){
+  var rc=cv.getBoundingClientRect(),sx=LW/rc.width,sy=LH/rc.height;
+  return{x:(ex-rc.left)*sx,y:(ey-rc.top)*sy};
+}
+
+// ── DRAG ───────────────────────────────────────
+function onDown(ex,ey){
+  if(selIdx===null||locked)return;
+  var lp=toLogical(ex,ey);
+  if(hit(lp.x,lp.y)){dragging=true;dragX0=ex;dragT0=plungerT;cv.classList.add('dragging');cv.classList.remove('can-drag');}
+}
+var lastPushPhase=-1;
+function onMove(ex,ey){
+  if(!dragging)return;
+  var rc=cv.getBoundingClientRect(),sx=LW/rc.width;
+  var dx=(ex-dragX0)*sx;
+  var resist=tremorOn?.55:1;
+  var jitter=tremorOn?(Math.random()-.5)*.018:0;
+  // 降低灵敏度，推动更缓慢：约需 2.6 倍拖动距离才推满
+  var slow=0.38;
+  plungerT=Math.max(0,Math.min(1,dragT0+dx/TRAVEL*slow*resist+jitter));
+  // tick sound
+  if(Math.abs(plungerT-lastDragTickT)>.04){lastDragTickT=plungerT;playDragTick();}
+  updateTrack();drawSyringe();updateHint();
+  // 推动时按进度切换春姬俏皮文案
+  if(plungerT>=0.05&&plungerT<.85){
+    var phase=Math.min(4,Math.floor(plungerT/.2));
+    if(phase!==lastPushPhase){lastPushPhase=phase;setNpc(NPC.push[phase]);}
+  }
+  if(plungerT>=.85&&!locked)confirmInject();
+}
+function onUp(){
+  if(!dragging)return;
+  dragging=false;lastPushPhase=-1;cv.classList.remove('dragging');
+  if(selIdx!==null&&!locked)cv.classList.add('can-drag');
+  if(plungerT<.85&&!locked)snapBack();
+}
+
+// ── TRACK BAR ──────────────────────────────────
+var trackFill=document.getElementById('trackFill');
+function updateTrack(){
+  var pct=Math.min(plungerT/.85*100,100);
+  trackFill.style.width=pct+'%';
+  if(selIdx!==null){
+    var c=OPTIONS[selIdx].color;
+    trackFill.style.background=c;
+    trackFill.style.boxShadow='0 0 8px '+c;
+  }
+}
+
+// ── HINT ───────────────────────────────────────
+var hintEl=document.getElementById('canvasHint');
+function updateHint(){
+  if(selIdx===null){hintEl.textContent='选择选项后解锁注射';hintEl.style.color='rgba(255,255,255,.2)';return;}
+  var c=OPTIONS[selIdx].color;
+  hintEl.style.color=c;
+  if(plungerT>=.85){hintEl.textContent='▶ 注射中...';return;}
+  if(plungerT<.02){hintEl.textContent='← 向右推动推杆完成注射 →';}
+  else{hintEl.textContent='已推入 '+Math.round(plungerT*100)+'% · 继续推至注射';}
+}
+
+// ── SNAP BACK ──────────────────────────────────
+function snapBack(){
+  var s0=plungerT,t0=null,dur=340;
+  function step(ts){if(!t0)t0=ts;var p=(ts-t0)/dur;if(p>=1){plungerT=0;lastPushPhase=-1;updateTrack();drawSyringe();updateHint();if(selIdx!==null)setNpc(NPC[OPTIONS[selIdx].key]);return;}var q=1-p;plungerT=s0*q*q*q;updateTrack();drawSyringe();updateHint();requestAnimationFrame(step);}
+  requestAnimationFrame(step);
+}
+
+// ── PUSH ANIM ──────────────────────────────────
+function pushToFull(cb){
+  // egg A: hi tremor shake before push
+  if(selIdx===0&&tremorOn){
+    startTremor(true);
+    setTimeout(function(){stopTremor();_push();},480);
+  } else _push();
+  function _push(){
+    var s0=plungerT,t0=null,dur=900;
+    function step(ts){if(!t0)t0=ts;var p=Math.min((ts-t0)/dur,1),q=p*p;plungerT=s0+(1-s0)*q;updateTrack();drawSyringe();updateHint();if(p<1)requestAnimationFrame(step);else{plungerT=1;drawSyringe();if(cb)setTimeout(cb,100);}}
+    requestAnimationFrame(step);
+  }
+}
+
+// ── POINTER EVENTS ─────────────────────────────
+cv.addEventListener('mousedown',function(e){e.preventDefault();onDown(e.clientX,e.clientY);});
+cv.addEventListener('touchstart',function(e){e.preventDefault();if(e.touches.length)onDown(e.touches[0].clientX,e.touches[0].clientY);},{passive:false});
+window.addEventListener('mousemove',function(e){onMove(e.clientX,e.clientY);});
+window.addEventListener('touchmove',function(e){if(dragging&&e.touches.length){e.preventDefault();onMove(e.touches[0].clientX,e.touches[0].clientY);}},{passive:false});
+window.addEventListener('mouseup',onUp);window.addEventListener('touchend',onUp);
+cv.addEventListener('mousemove',function(e){if(dragging||selIdx===null||locked)return;var lp=toLogical(e.clientX,e.clientY);cv.classList.toggle('can-drag',hit(lp.x,lp.y));});
+cv.addEventListener('mouseleave',function(){if(!dragging)cv.classList.remove('can-drag');});
+
+// ── BUILD PANELS ───────────────────────────────
+var veinRow=document.getElementById('veinRow');
+OPTIONS.forEach(function(opt,i){
+  var cell=document.createElement('div');
+  cell.className='vein-cell';
+  cell.style.setProperty('--cell-color',opt.color);
+  cell.style.setProperty('--cell-glow',opt.glow);
+  cell.innerHTML='<div class="vein-header"><span class="vein-key">'+opt.key+'</span><span class="vein-title">'+opt.title+'</span></div>'
+    +'<div class="vein-quote">'+opt.quote+'</div><div class="vein-divider"></div>'
+    +'<div class="vein-footer"><div class="vein-case">'+opt.caseNum+'<br>'+opt.caseTag+'</div>'
+    +'<div class="vein-bar-wrap"><div class="vein-bar-fill" id="vf'+i+'"></div></div></div>';
+  cell.addEventListener('click',function(){selectOption(i);});
+  veinRow.appendChild(cell);
+});
+
+// ── SELECT ─────────────────────────────────────
+function selectOption(i){
+  if(locked)return;if(selIdx===i)return;
+  selIdx=i;plungerT=0;lastDragTickT=0;
+  stopNeedleGrow();stopTremor();
+  veinRow.querySelectorAll('.vein-cell').forEach(function(c){c.classList.remove('shake-lo','shake-hi');});
+  veinRow.querySelectorAll('.vein-cell').forEach(function(c,j){c.classList.toggle('selected',j===i);});
+  document.getElementById('vf'+i).style.width='30%';
+  document.getElementById('vf'+(i===0?1:0)).style.width='0%';
+  cv.classList.add('can-drag');
+  if(i===0){
+    setTimeout(function(){startTremor(false);},80);
+    veinRow.querySelectorAll('.vein-cell')[0].classList.add('shake-lo');
+  } else {
+    startNeedleGrow();
+    setTimeout(function(){if(selIdx===1&&!locked)setNpc(NPC.Bthick);},1400);
+  }
+  setNpc(NPC[OPTIONS[i].key]);
+  updateTrack();updateHint();drawSyringe();playClick();
+}
+
+// ── CONFIRM ────────────────────────────────────
+function confirmInject(){
+  if(locked)return;locked=true;
+  startBGM();playInject();
+  // card shake
+  var cells=veinRow.querySelectorAll('.vein-cell');
+  if(selIdx===0){cells[0].classList.remove('shake-lo');cells[0].classList.add('shake-hi');}
+  // vein bar 100%
+  var fill=document.getElementById('vf'+selIdx);
+  if(fill){fill.style.transition='width .5s cubic-bezier(.4,0,.2,1)';fill.style.width='100%';}
+  // screen flash
+  flashScreen(OPTIONS[selIdx].color);
+  pushToFull(function(){
+    stopTremor();stopNeedleGrow();
+    cells.forEach(function(c){c.classList.remove('shake-lo','shake-hi');});
+    var ts=document.getElementById('transition-screen'),tsLine=ts.querySelector('.ts-line');
+    if(OPTIONS[selIdx].key==='B'){
+      tsLine.innerHTML='老熟人 · 已记录<br>准备好迎接<em>拷打</em>';
+    }else{
+      tsLine.innerHTML='自我归序已记录<br>准备好迎接<em>拷打</em>';
+    }
+    ts.classList.add('open');playChime();
+    setTimeout(function(){ts.classList.remove('open');save();window.location.href='../Q1/survey_q1_backup_20260311.html';},400);
+  });
+}
+
+function flashScreen(c){
+  var f=document.createElement('div');f.style.cssText='position:fixed;inset:0;z-index:8000;pointer-events:none;background:'+c+';opacity:.18;transition:opacity .5s ease';
+  document.body.appendChild(f);requestAnimationFrame(function(){setTimeout(function(){f.style.opacity='0';setTimeout(function(){f.remove();},500);},60);});
+}
+
+function setNpc(html){
+  var el=document.getElementById('npcComment');el.classList.add('fade');
+  setTimeout(function(){el.innerHTML=html;el.classList.remove('fade');},220);
+}
+function save(){try{localStorage.setItem('survey_q0',OPTIONS[selIdx].key);}catch(e){}}
+function startBGM(){var b=document.getElementById('q0-bgm');if(b){b.volume=.3;b.play().catch(function(){});}}
+startBGM();
+['click','touchstart'].forEach(function(ev){document.addEventListener(ev,function f(){startBGM();document.removeEventListener(ev,f);},{once:true,passive:true});});
+
+document.getElementById('introBtn').addEventListener('click',function(){
+  startBGM();
+  document.getElementById('introOverlay').classList.add('hidden');
+  document.getElementById('q1Main').classList.add('visible');
+  setTimeout(resizeCanvas,50);updateHint();
+});
+
+setTimeout(resizeCanvas,100);
+})();
+</script>
+</body>
+</html>

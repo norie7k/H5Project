@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>QUESTION_05 作文题 · 致Peter的一封信</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Noto+Sans+SC:wght@400;500;600&family=Noto+Serif+SC:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --cyan:#00ffff;--magenta:#ff00ff;--yellow:#ffff00;--green:#00ff88;
+  --bg:#030810;--panel:rgba(6,14,30,0.96);
+  --gold:#d4a843;--gold-dim:rgba(212,168,67,.12);--gold-bd:rgba(212,168,67,.26);
+  --paper:#0d0b06;--paper-line:rgba(255,200,100,0.11);
+  --exam-red:#ff4455;--pink:rgba(232,121,249,1)
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--bg);color:#e0f0ff;font-family:'Noto Sans SC',sans-serif;overflow-x:hidden}
+body{display:flex;flex-direction:column;align-items:center;min-height:100vh}
+#scanline{position:fixed;inset:0;pointer-events:none;z-index:9000;
+  background:repeating-linear-gradient(0deg,transparent 0,transparent 2px,rgba(0,0,0,.08) 2px,rgba(0,0,0,.08) 3px)}
+
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes slideUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes blink{50%{opacity:0}}
+@keyframes fadeInUp{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+@keyframes scanBeam{0%{top:-2px;opacity:0}5%{opacity:1}95%{opacity:.5}100%{top:100%;opacity:0}}
+@keyframes peekIn{0%{transform:translateX(115%)}65%{transform:translateX(-3%)}82%{transform:translateX(2%)}100%{transform:translateX(0)}}
+@keyframes peekOut{0%{transform:translateX(0)}100%{transform:translateX(115%)}}
+@keyframes eyeB{0%,88%,100%{transform:scaleY(1)}93%{transform:scaleY(.08)}}
+@keyframes eyeS{0%,100%{transform:translateX(0)}35%{transform:translateX(-2px)}70%{transform:translateX(2px)}}
+@keyframes stampIn{0%{opacity:0;transform:scale(2.3) rotate(-18deg)}55%{transform:scale(.9) rotate(3deg)}75%{transform:scale(1.05) rotate(-1deg)}100%{opacity:1;transform:scale(1) rotate(0)}}
+@keyframes aiGlow{0%,100%{box-shadow:0 0 7px rgba(0,255,255,.2)}50%{box-shadow:0 0 20px rgba(0,255,255,.7),0 0 40px rgba(0,255,255,.3)}}
+@keyframes hintPulse{0%,100%{opacity:.7}50%{opacity:.3}}
+@keyframes borderFlow{0%{background-position:0% 50%}100%{background-position:200% 50%}}
+
+/* ── INTRO ── */
+.intro-overlay{position:fixed;inset:0;z-index:800;background:rgba(3,8,16,.95);
+  display:flex;align-items:center;justify-content:center;padding:20px;animation:fadeIn .3s}
+.intro-overlay.hidden{display:none}
+.intro-modal{max-width:400px;width:100%;background:var(--panel);
+  border:1px solid rgba(0,255,255,.2);
+  box-shadow:0 0 60px rgba(0,255,255,.06),inset 0 0 40px rgba(0,0,0,.5);
+  padding:26px 22px 22px;position:relative;animation:slideUp .4s .1s both}
+.intro-modal::before,.intro-modal::after,.intro-modal .cbl,.intro-modal .cbr
+  {content:'';position:absolute;width:14px;height:14px}
+.intro-modal::before{top:0;left:0;border-top:2px solid var(--cyan);border-left:2px solid var(--cyan)}
+.intro-modal::after{top:0;right:0;border-top:2px solid var(--cyan);border-right:2px solid var(--cyan)}
+.intro-modal .cbl{bottom:0;left:0;border-bottom:2px solid var(--magenta);border-left:2px solid var(--magenta)}
+.intro-modal .cbr{bottom:0;right:0;border-bottom:2px solid var(--magenta);border-right:2px solid var(--magenta)}
+.intro-speaker{font-family:'Press Start 2P',monospace;font-size:7px;color:rgba(232,121,249,.85);
+  letter-spacing:.14em;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.intro-speaker::before{content:'';width:6px;height:6px;background:var(--magenta);
+  border-radius:50%;box-shadow:0 0 8px var(--magenta);animation:blink .8s step-end infinite}
+.intro-bubble{font-size:13.5px;line-height:1.85;color:rgba(224,240,255,.9);margin-bottom:22px;border-left:2px solid rgba(0,255,255,.2);padding-left:12px}
+.intro-bubble em{color:var(--cyan);font-style:normal}
+.intro-btn{font-family:'Press Start 2P',monospace;font-size:8px;color:var(--cyan);
+  border:1px solid rgba(0,255,255,.45);padding:12px 28px;
+  background:rgba(0,255,255,.07);cursor:pointer;display:block;margin:0 auto;
+  transition:background .2s,box-shadow .2s;letter-spacing:.06em}
+.intro-btn:hover{background:rgba(0,255,255,.15);box-shadow:0 0 18px rgba(0,255,255,.3)}
+.intro-btn:disabled{opacity:.35;cursor:not-allowed}
+
+/* ── LAYOUT ── */
+#app{position:relative;z-index:10;max-width:420px;width:100%;padding:14px 14px 48px;
+  display:flex;flex-direction:column;align-items:center}
+.q4-main{display:none;flex-direction:column;width:100%}
+.q4-main.visible{display:flex;animation:slideUp .45s forwards}
+
+.q-progress{display:flex;align-items:center;gap:10px;margin-bottom:16px;width:100%}
+.q-progress-label{font-family:'Press Start 2P',monospace;font-size:7px;color:var(--cyan);
+  letter-spacing:.12em;text-shadow:0 0 10px rgba(0,255,255,.4);flex-shrink:0}
+.q-progress-track{flex:1;height:7px;background:rgba(0,255,255,.07);
+  border:1px solid rgba(255,255,255,.2);border-radius:2px;overflow:hidden}
+.q-progress-fill{height:100%;width:80%;border-radius:1px;
+  background:linear-gradient(90deg,var(--cyan),var(--magenta),var(--yellow));
+  box-shadow:0 0 10px rgba(0,255,255,.35)}
+.q-progress-num{font-family:'Press Start 2P',monospace;font-size:9px;color:var(--magenta);
+  letter-spacing:.08em;text-shadow:0 0 10px rgba(255,0,255,.4);flex-shrink:0}
+
+.q-header{text-align:center;width:100%;margin-bottom:18px}
+.q-tag{font-family:'Press Start 2P',monospace;font-size:10px;letter-spacing:.1em;
+  display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:8px}
+.q-tag-num{color:var(--cyan);text-shadow:0 0 8px rgba(0,255,255,.5)}
+.q-tag-sep{color:var(--cyan);opacity:.6}
+.q-tag-cat{color:var(--magenta);text-shadow:0 0 8px rgba(255,0,255,.4)}
+.q-text{font-size:clamp(16px,4.2vw,20px);font-weight:600;color:rgba(0,255,255,.97);
+  line-height:1.5;text-shadow:0 0 22px rgba(0,255,255,.4);letter-spacing:.04em;margin-bottom:8px}
+.q-badge{display:inline-flex;align-items:center;gap:5px;
+  padding:4px 12px;border:1px solid var(--gold-bd);background:var(--gold-dim);
+  font-family:'Press Start 2P',monospace;font-size:6.5px;color:var(--gold);letter-spacing:.1em}
+.q-badge::before{content:'▶';font-size:5px}
+
+/* ── EXAM PAPER ── */
+.exam-paper{
+  width:100%;background:var(--paper);
+  border:1px solid var(--gold-bd);
+  box-shadow:0 0 50px rgba(212,168,67,.05),inset 0 0 80px rgba(0,0,0,.6);
+  position:relative;overflow:hidden;padding:20px 16px 22px;
+}
+.exam-paper::before{/* 横线 */
+  content:'';position:absolute;inset:0;pointer-events:none;z-index:0;
+  background:repeating-linear-gradient(
+    0deg,transparent 0,transparent 29px,var(--paper-line) 29px,var(--paper-line) 30px)}
+.exam-paper::after{/* 左红线 */
+  content:'';position:absolute;top:0;bottom:0;left:36px;width:1px;
+  background:rgba(255,68,85,.15);pointer-events:none;z-index:1}
+.sbeam{position:absolute;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,rgba(212,168,67,.16),transparent);
+  animation:scanBeam 5s linear infinite;pointer-events:none;z-index:2}
+
+/* 卷头 */
+.exam-head{position:relative;z-index:3;text-align:center;
+  padding-bottom:13px;margin-bottom:18px;border-bottom:1px solid var(--gold-bd)}
+.ehead-title{font-family:'Noto Serif SC',serif;font-size:14px;font-weight:600;
+  color:var(--gold);letter-spacing:.35em;text-shadow:0 0 14px rgba(212,168,67,.4);margin-bottom:4px}
+.ehead-sub{font-family:'Press Start 2P',monospace;font-size:5.5px;
+  color:rgba(212,168,67,.42);letter-spacing:.14em;margin-bottom:10px}
+.ehead-meta{display:flex;justify-content:space-around;
+  font-size:10px;color:rgba(255,255,255,.36);font-family:'Noto Sans SC',sans-serif}
+.ehead-meta span{display:flex;align-items:center;gap:3px}
+.mdot{width:4px;height:4px;border-radius:50%;background:var(--gold);opacity:.4}
+
+/* ── 题目说明 ── */
+.ctx-block{
+  position:relative;z-index:3;margin-bottom:18px;
+  border:1px solid var(--gold-bd);background:rgba(212,168,67,.04);
+}
+.ctx-tag{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:6px 14px;
+  background:rgba(212,168,67,.1);border-bottom:1px solid var(--gold-bd);
+  border-right:1px solid var(--gold-bd);
+  font-family:'Press Start 2P',monospace;font-size:9px;
+  color:var(--gold);letter-spacing:.1em;
+}
+.ctx-tag::before{content:'◆';font-size:7px;opacity:.8}
+.ctx-rows{padding:14px 16px 12px}
+.ctx-row{
+  display:flex;align-items:flex-start;gap:10px;
+  padding:6px 0;font-size:13px;line-height:1.82;
+  color:rgba(218,232,255,.88);font-family:'Noto Sans SC',sans-serif;
+  border-bottom:1px dashed rgba(255,255,255,.06);
+}
+.ctx-row:last-child{border-bottom:none;padding-bottom:0}
+.ctx-row.ctx-row-block{display:block;padding:0}
+.ctx-row.ctx-row-block .ctx-t{
+  display:block;line-height:2.15;letter-spacing:.03em;
+  font-size:13.5px;color:rgba(228,238,255,.9);
+  padding-left:14px;border-left:3px solid var(--gold-bd);
+  text-align:justify;text-justify:inter-ideograph;
+}
+.ctx-row.ctx-row-block .ctx-t .ctx-line{
+  display:block;margin-bottom:.35em;padding-left:0;
+}
+.ctx-row.ctx-row-block .ctx-t .ctx-line:last-child{margin-bottom:0}
+.ctx-n{
+  font-family:'Press Start 2P',monospace;font-size:6px;
+  color:rgba(212,168,67,.58);flex-shrink:0;margin-top:3px;
+}
+.ctx-t em{color:var(--cyan);font-style:normal;font-weight:600}
+.ctx-t strong{
+  color:var(--gold);font-weight:600;
+  text-shadow:0 0 14px rgba(212,168,67,.4);
+  padding:2px 6px;margin:0 2px;
+  background:rgba(212,168,67,.12);border-radius:2px;
+}
+.ctx-tip{
+  display:flex;align-items:flex-start;gap:10px;
+  margin-top:0;padding:12px 14px;
+  background:rgba(255,215,80,.06);
+  border-top:1px dashed rgba(255,215,80,.25);
+  font-size:12px;color:rgba(255,220,100,.9);
+  font-family:'Noto Sans SC',sans-serif;font-style:italic;
+  line-height:1.7;
+}
+.ctx-tip-ico{font-style:normal;font-size:14px;flex-shrink:0}
+
+/* ── 阅读材料（与题目说明同格式）── */
+.ctx-block .email-card{margin-top:0}
+.email-card{
+  position:relative;z-index:3;
+  background:rgba(0,0,0,.42);border:1px solid rgba(0,255,255,.18);
+  margin-bottom:14px;
+  clip-path:polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px);
+}
+.email-top{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:7px 12px;border-bottom:1px solid rgba(0,255,255,.1);
+  background:rgba(0,255,255,.04);
+}
+.email-from{font-family:'Press Start 2P',monospace;font-size:5.5px;color:rgba(0,255,255,.52);letter-spacing:.07em}
+.email-urg{font-size:9px;color:var(--exam-red);background:rgba(255,68,85,.1);
+  padding:2px 7px;border:1px solid rgba(255,68,85,.32);font-family:'Noto Sans SC',sans-serif}
+.email-subj{
+  margin:0 12px;padding:9px 0 8px;
+  font-size:12.5px;font-weight:600;color:rgba(224,240,255,.9);
+  border-bottom:1px solid rgba(255,255,255,.07);
+}
+.email-body{
+  padding:10px 12px 12px;
+  font-size:12px;line-height:1.88;color:rgba(192,212,248,.7);
+  font-family:'Noto Sans SC',sans-serif;
+}
+.email-body em{color:rgba(255,228,78,.88);font-style:normal}
+.email-ps{
+  margin:10px 0 0;padding:6px 10px;
+  border-left:2px solid rgba(0,255,255,.2);
+  font-size:11px;color:rgba(0,255,255,.6);font-style:italic;
+}
+
+/* 作文要求 */
+.req-bar{
+  position:relative;z-index:3;
+  padding:9px 12px;margin-bottom:16px;
+  border-left:3px solid var(--gold-bd);background:rgba(212,168,67,.04);
+  font-size:11.5px;line-height:1.9;color:rgba(255,255,255,.5);
+  font-family:'Noto Sans SC',sans-serif;
+}
+.req-bar strong{color:var(--gold)}
+
+/* ── 作文输入 ── */
+.essay-wrap{position:relative;z-index:3}
+.essay-bar{
+  display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;
+}
+.essay-bar-l{
+  font-family:'Press Start 2P',monospace;font-size:6px;
+  color:rgba(212,168,67,.65);letter-spacing:.1em;
+  display:flex;align-items:center;gap:5px;
+}
+.essay-bar-l::before{content:'✏';font-size:9px;font-family:sans-serif}
+.essay-wc{font-family:'Press Start 2P',monospace;font-size:6px;
+  color:rgba(255,255,255,.28);transition:color .3s}
+.essay-wc.on{color:var(--cyan);text-shadow:0 0 6px rgba(0,255,255,.4)}
+
+.essay-box{
+  position:relative;border:1px solid rgba(212,168,67,.18);
+  background:rgba(0,0,0,.22);transition:border-color .3s;
+}
+.essay-box:focus-within{border-color:rgba(212,168,67,.42)}
+.essay-box::after{
+  content:'';position:absolute;inset:-1px;pointer-events:none;
+  background:linear-gradient(90deg,transparent,rgba(212,168,67,.22),transparent,rgba(0,255,255,.12),transparent);
+  background-size:200% 100%;opacity:0;transition:opacity .3s;
+}
+.essay-box:focus-within::after{opacity:1;animation:borderFlow 3.5s linear infinite}
+
+textarea.essay{
+  width:100%;min-height:188px;
+  background:transparent;border:none;outline:none;resize:none;
+  font-family:'Noto Serif SC',serif;font-size:13.5px;line-height:30px;
+  color:rgba(236,230,212,.9);caret-color:var(--gold);
+  padding:8px 10px;letter-spacing:.04em;
+}
+textarea.essay::placeholder{
+  color:rgba(255,255,255,.17);font-family:'Noto Sans SC',sans-serif;font-size:12.5px;line-height:1.9}
+textarea.essay:focus{outline:none}
+
+/* ── AI彩蛋 ── */
+.ai-panel{
+  position:relative;z-index:3;margin-top:10px;
+  border:1px solid rgba(0,255,255,.2);background:rgba(0,6,20,.85);overflow:hidden;
+}
+.ai-panel .sbeam{background:linear-gradient(90deg,transparent,rgba(0,255,255,.24),transparent);animation-duration:3s}
+.ai-body{padding:14px 15px 16px;display:block;animation:fadeInUp .3s forwards}
+.ai-desc{font-size:13px;color:rgba(208,228,255,.88);font-family:'Noto Sans SC',sans-serif;
+  line-height:1.9;margin-bottom:14px;text-shadow:0 0 12px rgba(0,255,255,.15)}
+.ai-desc b{color:var(--cyan);text-shadow:0 0 14px rgba(0,255,255,.4);font-weight:600}
+.ai-desc .note{font-size:11px;color:rgba(255,228,100,.72);margin-top:8px;display:block;letter-spacing:.02em}
+.ai-go{width:100%;padding:12px;border:1px solid rgba(0,255,255,.45);
+  background:rgba(0,255,255,.08);color:var(--cyan);
+  font-family:'Press Start 2P',monospace;font-size:8px;
+  cursor:pointer;transition:background .2s;letter-spacing:.1em;
+  box-shadow:0 0 16px rgba(0,255,255,.12)}
+.ai-go:hover{background:rgba(0,255,255,.15);box-shadow:0 0 20px rgba(0,255,255,.2)}
+
+/* ── 提交 ── */
+.submit-area{position:relative;z-index:3;margin-top:16px}
+.submit-hint{
+  font-size:11px;color:rgba(255,255,100,.62);
+  font-family:'Noto Sans SC',sans-serif;text-align:center;
+  margin-bottom:9px;display:none;animation:hintPulse 1.9s ease-in-out infinite;
+}
+.submit-hint.on{display:block}
+.submit-btn{
+  width:100%;padding:13px 20px;
+  border:1px solid rgba(0,255,255,.48);background:rgba(0,255,255,.07);
+  color:var(--cyan);font-family:'Press Start 2P',monospace;font-size:9px;
+  letter-spacing:.12em;cursor:pointer;position:relative;overflow:hidden;
+  clip-path:polygon(8px 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 100%,0 8px);
+  box-shadow:0 0 12px rgba(0,255,255,.14);transition:background .2s,box-shadow .2s;
+}
+.submit-btn::before{content:'';position:absolute;inset:0;
+  background:linear-gradient(90deg,transparent,rgba(0,255,255,.13),transparent);
+  transform:translateX(-100%);transition:transform .45s}
+.submit-btn:hover{background:rgba(0,255,255,.13);box-shadow:0 0 24px rgba(0,255,255,.38)}
+.submit-btn:hover::before{transform:translateX(100%)}
+.submit-btn:disabled{opacity:.33;cursor:not-allowed}
+
+/* ── 替换失败弹窗 ── */
+.replace-fail-bg{position:fixed;inset:0;z-index:910;background:rgba(0,3,16,.85);
+  display:none;align-items:center;justify-content:center;padding:20px}
+.replace-fail-bg.on{display:flex;animation:fadeIn .2s}
+.replace-fail-modal{max-width:300px;width:100%;background:rgba(2,8,22,.98);
+  border:1px solid rgba(0,255,255,.28);padding:24px 20px;text-align:center}
+.replace-fail-modal p{font-size:14px;line-height:1.7;color:rgba(224,240,255,.92);
+  margin-bottom:18px;font-family:'Noto Sans SC',sans-serif}
+.replace-fail-modal .btn-ok{padding:10px 24px;border:1px solid var(--cyan);
+  background:rgba(0,255,255,.08);color:var(--cyan);
+  font-family:'Press Start 2P',monospace;font-size:7px;cursor:pointer;
+  letter-spacing:.08em;transition:background .2s}
+.replace-fail-modal .btn-ok:hover{background:rgba(0,255,255,.15)}
+
+/* ── 假AI弹窗 ── */
+.ai-bg{position:fixed;inset:0;z-index:900;background:rgba(0,3,16,.88);
+  display:none;align-items:center;justify-content:center;padding:20px}
+.ai-bg.on{display:flex;animation:fadeIn .2s}
+.ai-modal{max-width:355px;width:100%;background:rgba(2,8,22,.98);
+  border:1px solid rgba(0,255,255,.26);padding:22px 18px;position:relative;overflow:hidden}
+.ai-modal::before,.ai-modal::after{content:'';position:absolute;width:13px;height:13px}
+.ai-modal::before{top:0;left:0;border-top:2px solid var(--cyan);border-left:2px solid var(--cyan)}
+.ai-modal::after{top:0;right:0;border-top:2px solid var(--magenta);border-right:2px solid var(--magenta)}
+.ai-modal .sbeam{animation-duration:2s}
+.ai-m-top{display:flex;align-items:center;gap:9px;margin-bottom:14px}
+.ai-ping{width:7px;height:7px;border-radius:50%;background:var(--cyan);
+  box-shadow:0 0 8px var(--cyan);animation:blink .9s ease-in-out infinite alternate}
+.ai-m-title{font-family:'Press Start 2P',monospace;font-size:7.5px;color:var(--cyan);letter-spacing:.12em}
+.ai-step{min-height:52px;margin-bottom:12px;
+  border-left:2px solid rgba(0,255,255,.18);padding-left:10px;
+  font-size:12px;font-family:'Noto Sans SC',sans-serif;color:rgba(198,224,255,.8);line-height:1.85}
+.cur{display:inline-block;width:2px;height:.9em;background:var(--cyan);
+  vertical-align:middle;margin-left:2px;animation:blink .6s step-end infinite}
+.ai-prog{height:4px;background:rgba(0,255,255,.07);
+  border:1px solid rgba(0,255,255,.14);border-radius:2px;overflow:hidden;margin-bottom:11px}
+.ai-prog .f{height:100%;background:linear-gradient(90deg,var(--cyan),var(--magenta));
+  border-radius:1px;width:0;transition:width 1s ease}
+.ai-joketxt{font-size:10px;color:rgba(255,220,80,.48);font-family:'Noto Sans SC',sans-serif;
+  text-align:center;min-height:15px;margin-bottom:11px}
+.ai-res{display:none;padding:10px 11px;margin-bottom:11px;
+  background:rgba(0,0,0,.42);border:1px solid rgba(0,255,255,.14);
+  font-size:12.5px;font-family:'Noto Serif SC',serif;
+  line-height:1.95;color:rgba(236,230,212,.86);max-height:140px;overflow-y:auto}
+.ai-res.on{display:block;animation:fadeInUp .3s forwards}
+.ai-btns{display:flex;gap:8px}
+.ai-btns button{flex:1;padding:10px;border:1px solid;
+  font-family:'Press Start 2P',monospace;font-size:7px;cursor:pointer;
+  transition:background .2s;letter-spacing:.05em}
+.btn-use{border-color:rgba(0,255,255,.42);color:var(--cyan);background:rgba(0,255,255,.07)}
+.btn-use:hover{background:rgba(0,255,255,.14)}
+.btn-no{border-color:rgba(255,255,255,.2);color:rgba(255,255,255,.52);background:transparent}
+.btn-no:hover{background:rgba(255,255,255,.05)}
+
+/* ── 交卷后「传输中」── */
+.res-bg{position:fixed;inset:0;z-index:700;background:rgba(0,0,0,.88);
+  display:none;align-items:center;justify-content:center;padding:20px}
+.res-bg.on{display:flex;animation:fadeIn .4s}
+.res-card{max-width:340px;width:100%;
+  background:rgba(2,8,22,.98);border:1px solid rgba(0,255,255,.26);
+  padding:28px 22px;position:relative;animation:slideUp .4s;text-align:center}
+.res-card::before,.res-card::after,.res-card .rbl,.res-card .rbr
+  {content:'';position:absolute;width:14px;height:14px}
+.res-card::before{top:0;left:0;border-top:2px solid var(--cyan);border-left:2px solid var(--cyan)}
+.res-card::after{top:0;right:0;border-top:2px solid var(--magenta);border-right:2px solid var(--magenta)}
+.res-card .rbl{bottom:0;left:0;border-bottom:2px solid var(--magenta);border-left:2px solid var(--magenta)}
+.res-card .rbr{bottom:0;right:0;border-bottom:2px solid var(--cyan);border-right:2px solid var(--cyan)}
+.res-msg{font-size:15px;line-height:1.8;color:rgba(224,240,255,.9);
+  font-family:'Noto Sans SC',sans-serif;margin-bottom:24px}
+.res-msg .dot{display:inline-block;width:6px;height:6px;background:var(--cyan);
+  border-radius:50%;margin:0 2px;animation:blink .8s step-end infinite;vertical-align:middle}
+.res-next-wrap{margin-top:8px}
+.res-next-wrap button{padding:12px 20px;border:1px solid var(--cyan);
+  background:rgba(0,255,255,.09);color:var(--cyan);
+  font-family:'Press Start 2P',monospace;font-size:8px;cursor:pointer;
+  letter-spacing:.08em;transition:background .2s,box-shadow .2s}
+.res-next-wrap button:hover{background:rgba(0,255,255,.16);box-shadow:0 0 20px rgba(0,255,255,.35)}
+.res-next-wrap button:active{transform:scale(.98)}
+</style>
+</head>
+<body>
+<audio id="bgm" src="early.wav" loop preload="auto"></audio>
+<div id="scanline"></div>
+
+<!-- 假AI弹窗 -->
+<div class="ai-bg" id="aiBg">
+  <div class="ai-modal">
+    <div class="sbeam"></div>
+    <div class="ai-m-top">
+      <div class="ai-ping"></div>
+      <div class="ai-m-title">NIUMA·AI WRITING v0.9β</div>
+    </div>
+    <div class="ai-step" id="aiStep">正在初始化语言模型...<span class="cur"></span></div>
+    <div class="ai-prog"><div class="f" id="aiProg"></div></div>
+    <div class="ai-joketxt" id="aiJoke"></div>
+    <div class="ai-res" id="aiRes"></div>
+    <div class="ai-btns" id="aiBtns" style="display:none">
+      <button class="btn-use" id="btnUse">替换原文</button>
+      <button class="btn-no" id="btnNo">不用了</button>
+    </div>
+  </div>
+</div>
+
+<!-- 替换失败弹窗 -->
+<div class="replace-fail-bg" id="replaceFailBg">
+  <div class="replace-fail-modal">
+    <p>替换失败！Peter 要的是你的真话～</p>
+    <button type="button" class="btn-ok" id="replaceFailOk">知道了</button>
+  </div>
+</div>
+
+<!-- INTRO -->
+<div class="intro-overlay" id="introOverlay">
+  <div class="intro-modal">
+    <div class="cbl"></div><div class="cbr"></div>
+    <div class="intro-speaker">春姬 · Niuma</div>
+    <div class="intro-bubble">
+      <em>「纸笔陈情帖」</em>——旧时代人类最真诚的谏言方式<br><br>
+      那时候想诉说想法，全靠握紧笔杆伏案书写，把心底的看法一字一句落在纸上，美其名曰<em>「郑重表达」</em><br><br>
+      独属于旧时代的直白沟通，没有花哨修饰，是真切感受，不妨把想法<em>落笔成文</em>
+    </div>
+    <button class="intro-btn" id="introBtn">开始作答</button>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div id="app">
+<div class="q4-main" id="q4Main">
+
+  <div class="q-progress">
+    <span class="q-progress-label">PROGRESS</span>
+    <div class="q-progress-track"><div class="q-progress-fill" style="width:100%"></div></div>
+    <span class="q-progress-num">5/5</span>
+  </div>
+
+  <div class="q-header">
+    <div class="q-tag">
+      <span class="q-tag-num">QUESTION05</span>
+      <span class="q-tag-sep">//</span>
+      <span class="q-tag-cat">开放性作文</span>
+    </div>
+    <div class="q-text">最需要整改哪个系统？</div>
+  </div>
+
+  <div class="exam-paper">
+    <div class="sbeam"></div>
+
+    <!-- 卷头 -->
+    <div class="exam-head">
+      <div class="ehead-title">《Hello World》玩家满意度调研</div>
+      <div class="ehead-sub">PLAYER SATISFACTION SURVEY · WRITING SECTION</div>
+      <div class="ehead-meta">
+        <span><span class="mdot"></span>满分 100 分</span>
+        <span><span class="mdot"></span>字数不限</span>
+        <span><span class="mdot"></span>写作区</span>
+      </div>
+    </div>
+
+    <!-- 题目说明 -->
+    <div class="ctx-block">
+      <div class="ctx-tag">题目说明</div>
+      <div class="ctx-rows">
+        <div class="ctx-row ctx-row-block">
+          <span class="ctx-t">
+            <span class="ctx-line">假设你是药丸高中的学生李华，也是《HW》唯一内测玩家</span>
+            <span class="ctx-line">因为犀利、火力全开的吐槽，被官方制作人 Beter 邀请成为笔友</span>
+            <span class="ctx-line">其向你发来求助，请用中文回信，<strong>指出最需整改的系统并给出神级修改方案</strong></span>
+          </span>
+        </div>
+      </div>
+      <div class="ctx-tip">
+        <span class="ctx-tip-ico">📮</span>
+        友情提示：写得越狠，越可能把你的名字报给Peter——责任是你的，锅是Beter的
+      </div>
+    </div>
+
+    <!-- 阅读材料（与题目说明同格式） -->
+    <div class="ctx-block">
+      <div class="ctx-tag">阅读材料</div>
+      <div class="ctx-rows">
+        <div class="email-card">
+      <div class="email-top">
+        <span class="email-from">FROM: beter_team@helloworld.dev</span>
+      </div>
+      <div class="email-body">
+        李华你好！<br><br>
+        我是摸鱼策划Beter，现在向你同步一个紧急情况：<br><br>
+        我的老板Peter抱着保温杯蹲在工位门口，说"本周必须拿出优先级方案"<br>
+        我们这群人现在的状态是：假装在打字，实际在刷猫图<br><br>
+        我们吵了三小时，结论是：反正谁也不想背锅，不如找你这个「高三模拟考战神」<br><br>
+        只有你能给出让老板点头的「押题级神方案」！<br>
+        事成之后，送你<em>五三大礼包</em>+<em>以身相许</em>以报答救命之恩<br><br>
+      </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 作文要求 -->
+    <div class="req-bar">
+      <strong>【作文要求】</strong>　请以「致 Peter：」开头，<strong>锐评内测中最需整改的一个系统</strong>，并给出至少零条具体建议，字数不限
+    </div>
+
+    <!-- 作文输入 -->
+    <div class="essay-wrap">
+      <div class="essay-bar">
+        <span class="essay-bar-l">开始作答</span>
+        <span class="essay-wc" id="wc">0 字</span>
+      </div>
+      <div class="essay-box">
+        <textarea class="essay" id="essay" spellcheck="false"
+          placeholder="致 Peter：&#10;你们这个系统我忍很久了……"></textarea>
+      </div>
+    </div>
+
+    <!-- AI 润色 -->
+    <div class="ai-panel" id="aiPanel">
+      <div class="sbeam"></div>
+      <div class="ai-body">
+        <div class="ai-desc">
+          输入你的想法后，让AI助手春姬帮你 <b>「升华」</b> 一下？
+          <span class="note">温馨提示：AI 润色仅供参考，Peter 更爱看你的真实想法！</span>
+        </div>
+        <button class="ai-go" id="aiGo">⚡ 一键 AI 润色</button>
+      </div>
+    </div>
+
+    <!-- 提交 -->
+    <div class="submit-area">
+      <div class="submit-hint" id="subHint">作文已就绪，确认提交给 Peter？</div>
+      <button class="submit-btn" id="subBtn">交卷 / SUBMIT</button>
+    </div>
+
+  </div><!-- exam-paper -->
+</div><!-- q4-main -->
+</div><!-- app -->
+
+<!-- 交卷后「传输中」弹窗 -->
+<div class="res-bg" id="resBg">
+  <div class="res-card">
+    <div class="rbl"></div><div class="rbr"></div>
+    <div class="res-msg" id="resMsg">正在传输至Peter的服务器<span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+    <div class="res-next-wrap">
+      <button type="button" id="rNext">完成 / 查看结果 ▶</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+'use strict';
+
+// ── 音效（Web Audio）──
+function playClick(){try{var ctx=new(window.AudioContext||window.webkitAudioContext)(),n=ctx.currentTime,o=ctx.createOscillator(),g=ctx.createGain();o.type='sine';o.frequency.setValueAtTime(880,n);g.gain.setValueAtTime(0,n);g.gain.linearRampToValueAtTime(.38,n+.02);g.gain.linearRampToValueAtTime(0,n+.06);o.connect(g);g.connect(ctx.destination);o.start(n);o.stop(n+.07);}catch(e){}}
+function playChime(){try{var ctx=new(window.AudioContext||window.webkitAudioContext)(),n=ctx.currentTime;[880,1100,1320].forEach(function(f,i){var o=ctx.createOscillator(),g=ctx.createGain();o.type='sine';o.frequency.value=f;g.gain.setValueAtTime(0,n+i*.1);g.gain.linearRampToValueAtTime(.3,n+i*.1+.02);g.gain.linearRampToValueAtTime(0,n+i*.1+.2);o.connect(g);g.connect(ctx.destination);o.start(n+i*.1);o.stop(n+i*.1+.25);});}catch(e){}}
+
+// ── Intro：介绍页首次点击即播 BGM，再点「开始作答」进入考场 ──
+function startQ4Bgm(){
+  var b=document.getElementById('bgm');
+  if(!b||b._started) return;
+  b.volume=.44;
+  var p=b.play();
+  if(p) p.then(function(){ b._started=true; }).catch(function(){});
+}
+
+// 页面加载立即尝试
+startQ4Bgm();
+
+// intro 区域点击也尝试（兜底）
+var introOverlay=document.getElementById('introOverlay');
+function onIntroFirstInteraction(){
+  introOverlay.removeEventListener('click',onIntroFirstInteraction);
+  introOverlay.removeEventListener('touchstart',onIntroFirstInteraction);
+  startQ4Bgm();
+}
+introOverlay.addEventListener('click',onIntroFirstInteraction);
+introOverlay.addEventListener('touchstart',onIntroFirstInteraction,{passive:true});
+
+document.getElementById('introBtn').addEventListener('click',function(){
+  startQ4Bgm();
+  document.getElementById('introOverlay').classList.add('hidden');
+  document.getElementById('q4Main').classList.add('visible');
+});
+
+// ── 字数 & 状态 ──
+var ta   = document.getElementById('essay');
+var wcEl = document.getElementById('wc');
+var sBtn = document.getElementById('subBtn');
+var sHint= document.getElementById('subHint');
+
+ta.addEventListener('input',function(){
+  var n=ta.value.length;
+  wcEl.textContent=n+' 字';
+  wcEl.classList.toggle('on',n>0);
+  sBtn.disabled=false;
+  sHint.classList.toggle('on',n>=5);
+});
+
+// ── AI面板 ──
+var aiPanel=document.getElementById('aiPanel');
+var aiPolishCount=0;
+
+var jokes=[
+  '正在检索内测反馈骂声数据库...',
+  '连接 Peter 的服务器（他在开会，稍等）...',
+  '春姬正在帮你删掉过激言辞...',
+  '过滤敏感反馈词汇中...',
+  '正在分析哪个系统被骂次数最多...',
+  '温馨提示：润色后责任仍归你本人 😇',
+];
+var tpls=[
+  function(t){ return '致 Peter：\n\n展信佳。我作为咱们游戏的内测玩家，同时也是药丸高中一名平平无奇的模考战神，仔细体验了一圈下来，说实话，心里还是挺有感触的。\n\n要说哪个系统最需要花心思调整，那还得是'+gs(t)+'，毕竟这个系统吧，玩的时候能明显感觉到，它确实是需要改一改的地方。\n\n关于修改方案，我也琢磨了挺久，大概有这么几点：第一，先把大家玩的时候觉得不舒服、忍不住吐槽的地方处理好，毕竟玩家觉得别扭的地方，肯定是有优化空间的；第二，按照咱们平时正常玩游戏的习惯来梳理逻辑，不用搞那些花里胡哨、中看不中用的设计，实用最重要；第三，后续改完了可以喊我看看，毕竟我作为天天刷五三的人，验一验效果还是没问题的。\n\n其实这套方案说出来也不算什么绝密妙招，但胜在实在\n\n药丸高中·李华 敬上\nP.S. 之前说好的五三大礼包可别忘了，我可是当真了，毕竟高三牲的快乐，全靠这套题了。'; },
+  function(t){ return '致 Peter：\n\n不知道你有没有这种感觉，玩一款游戏的时候，总有那么一个系统，说不上来哪里特别别扭，但玩着玩着就觉得，嗯，确实不太得劲，咱们游戏里的'+gs(t)+'，大概就是这么个存在。\n\n我内测这段时间，没事就点开玩一玩，越玩越觉得，这个系统的难度，简直比五三最后一道压轴大题还让人头大，倒不是说完全玩不明白，就是总觉得差了点意思，玩着累得慌。\n\n修改的话其实也不用搞得太复杂，有时候越简单反而越好用，不用堆砌太多没用的功能，先把最基础、最核心的操作理顺，让大家玩的时候不费劲，就已经成功一大半了。\n\n最后祝你早日下班，不用被堵在工位催方案，打工人何苦为难打工人。\n李华'; },
+  function(t){ return '致 Peter：\n\n认真讲，这段时间内测体验下来，'+gs(t)+'这个系统的表现，放在咱们玩家的体验标准里，大概就是模考直接拿不到及格分的水平，倒也不是一无是处，就是离好用还差了挺大一截。\n\n我个人觉得吧，要整改也不是什么难事，首先可以专门针对这个系统开个小会，大家一起捋捋问题所在；其次把玩家们吐槽得比较多的地方整理出来，不用全听，但也不能不听；最后每修改一版，不妨找我这样的普通内测玩家看一看，毕竟当局者迷，我们旁观者的感受还是挺实在的。\n\n我也不是随便说说，主要还是惦记着之前说好的五三礼包，毕竟高三学业紧张，玩游戏放松的同时，能拿到一套复习资料，也算是劳逸结合了。\n\n以上就是我的一些真实想法，仅供参考，毕竟我只是个热爱游戏的高中生罢了。\n\n李华·临时编外野生策划'; }
+];
+function gs(t){ var a=['背包系统','战斗系统','剧情系统','任务系统','社交系统','UI系统']; for(var i=0;i<a.length;i++) if(t.indexOf(a[i])>-1) return a[i]; return '某个说不清但很烦的系统'; }
+
+document.getElementById('aiGo').addEventListener('click',function(){
+  playClick();
+  var txt=ta.value.trim(); if(txt.length<5){ var b=this; b.textContent='先写点内容！'; setTimeout(function(){ b.textContent='⚡ 一键 AI 润色'; },1400); return; }
+  runAI(txt);
+});
+function runAI(orig){
+  var bg=document.getElementById('aiBg'), st=document.getElementById('aiStep'),
+    pf=document.getElementById('aiProg'), jk=document.getElementById('aiJoke'),
+    rs=document.getElementById('aiRes'), btns=document.getElementById('aiBtns');
+  bg.classList.add('on');
+  st.innerHTML='正在初始化 NIUMA·AI...<span class="cur"></span>';
+  pf.style.transition='none'; pf.style.width='0';
+  jk.textContent=''; rs.classList.remove('on'); rs.textContent=''; btns.style.display='none';
+  var steps=[
+    {t:'正在分析作文结构...',  p:'20%', j:jokes[~~(Math.random()*jokes.length)], ms:700},
+    {t:'调用语言模型中...',    p:'50%', j:jokes[~~(Math.random()*jokes.length)], ms:1500},
+    {t:'生成润色方案中...',    p:'78%', j:jokes[~~(Math.random()*jokes.length)], ms:2300},
+    {t:'收尾，校对标点...',    p:'96%', j:'', ms:3100},
+  ];
+  steps.forEach(function(s){
+    setTimeout(function(){
+      st.innerHTML=s.t+'<span class="cur"></span>';
+      setTimeout(function(){ pf.style.transition='width 1s ease'; pf.style.width=s.p; },30);
+      if(s.j) jk.textContent=s.j;
+    },s.ms);
+  });
+  setTimeout(function(){
+    aiPolishCount++;
+    var tplIdx=aiPolishCount<=3?aiPolishCount-1:~~(Math.random()*tpls.length);
+    var r=tpls[tplIdx](orig);
+    st.innerHTML='完成！<span class="cur"></span>'; pf.style.width='100%';
+    rs.textContent=r; rs.classList.add('on'); btns.style.display='flex';
+    playChime();
+    if(aiPolishCount>=4){
+      jk.textContent='经费不够，只能做离线AI惹QAQ';
+    }else{
+      jk.textContent='⚠️ 春姬AI生成，仅供娱乐 — 真实想法更珍贵';
+    }
+    document.getElementById('btnUse').onclick=function(){
+      playClick();
+      bg.classList.remove('on');
+      document.getElementById('replaceFailBg').classList.add('on');
+    };
+    document.getElementById('btnNo').onclick=function(){ playClick(); bg.classList.remove('on'); };
+  },3700);
+}
+document.getElementById('aiBg').addEventListener('click',function(e){ if(e.target===this) this.classList.remove('on'); });
+
+document.getElementById('replaceFailOk').addEventListener('click',function(){
+  playClick();
+  document.getElementById('replaceFailBg').classList.remove('on');
+});
+document.getElementById('replaceFailBg').addEventListener('click',function(e){
+  if(e.target===this) this.classList.remove('on');
+});
+
+// ── 提交 ──
+document.getElementById('subBtn').addEventListener('click',function(){
+  var txt=ta.value.trim();
+  doResult(txt);
+});
+var transmitPhrases=[
+  '押题级整改方案，加急传输至Peter服务器',
+  '信已寄出，Beter摸鱼快递，正在超速派送',
+  '传输进行中，请勿关闭页面（关了也不影响，五三礼包照样记你名）',
+  '邮件传输中，Beter的甩锅大业即将完成'
+];
+var blankPhrases=[
+  '暂无整改建议，已同步给摸鱼策划Beter',
+  '空白信件已寄出，主打一个佛系不吐槽',
+  '传输中：李华选择沉默，不给方案也不背锅',
+  '未填写反馈内容，Peter的保温杯白蹲了',
+  '提交成功，主打一个路过式参与，无需负责',
+  '空白邮件送达，Beter的甩锅计划暂时落空'
+];
+function doResult(txt){
+  var msgEl=document.getElementById('resMsg');
+  var arr=txt.length===0?blankPhrases:transmitPhrases;
+  var phrase=arr[~~(Math.random()*arr.length)];
+  msgEl.innerHTML=phrase+'<span class="dot"></span><span class="dot"></span><span class="dot"></span>';
+  document.getElementById('resBg').classList.add('on');
+}
+document.getElementById('rNext').addEventListener('click',function(){
+  var txt=ta.value.trim();
+  if(window.surveySetAnswer) window.surveySetAnswer('Q4',txt);
+  try{ localStorage.setItem('survey_q4',txt); }catch(e){}
+  window.location.href='../结束/end.html';
+});
+
+})();
+</script>
+</body>
+</html>

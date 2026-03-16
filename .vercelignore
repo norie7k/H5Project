@@ -1,0 +1,17 @@
+# 本地 / 开发文件，不部署
+.venv
+__pycache__
+*.pyc
+.env
+.env.*
+.DS_Store
+*.log
+node_modules
+.cursor
+.idea
+*.md
+!README.md
+# Q3 脚本与虚拟环境
+Q3/.venv
+Q3/remove_bg_cat.py
+Q3/*.py

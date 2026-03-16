@@ -1,0 +1,1269 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Q3 背包困惑度 · 节奏挑战</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Noto+Sans+SC:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--cyan:#00ffff;--magenta:#ff00ff;--yellow:#ffff00;--green:#00ff88;--red:#ff2244;--orange:#ff8800;--bg:#030810;--panel:rgba(6,14,30,0.96)}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);color:#e0f0ff;font-family:'Noto Sans SC',sans-serif;overflow-x:hidden}
+body{display:flex;flex-direction:column;align-items:center;min-height:100vh}
+#scanline{position:fixed;inset:0;pointer-events:none;z-index:9000;background:repeating-linear-gradient(0deg,transparent 0,transparent 2px,rgba(0,0,0,.09) 2px,rgba(0,0,0,.09) 3px)}
+#app{position:relative;z-index:10;max-width:400px;width:100%;padding:16px;display:flex;flex-direction:column;align-items:center}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes slideUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes blink{50%{opacity:0}}
+
+/* INTRO — 与 Q1/Q2 一致的前置介绍 */
+.intro-overlay{position:fixed;inset:0;z-index:800;background:rgba(3,8,16,.93);display:flex;align-items:center;justify-content:center;padding:20px;animation:fadeIn .3s forwards}
+.intro-overlay.hidden{display:none}
+.intro-modal{max-width:420px;width:100%;background:var(--panel);border:1px solid rgba(0,255,255,.22);box-shadow:0 0 60px rgba(0,255,255,.07),0 0 120px rgba(255,0,255,.04),inset 0 0 40px rgba(0,0,0,.4);padding:24px 22px 20px;position:relative;animation:slideUp .4s .1s both}
+.intro-modal::before,.intro-modal::after,.intro-modal .bl,.intro-modal .br{content:'';position:absolute;width:16px;height:16px}
+.intro-modal::before{top:0;left:0;border-top:2px solid var(--cyan);border-left:2px solid var(--cyan)}
+.intro-modal::after{top:0;right:0;border-top:2px solid var(--cyan);border-right:2px solid var(--cyan)}
+.intro-modal .bl{bottom:0;left:0;border-bottom:2px solid var(--magenta);border-left:2px solid var(--magenta)}
+.intro-modal .br{bottom:0;right:0;border-bottom:2px solid var(--magenta);border-right:2px solid var(--magenta)}
+.intro-speaker{font-family:'Press Start 2P',monospace;font-size:7px;color:rgba(232,121,249,.8);letter-spacing:.15em;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.intro-speaker::before{content:'';width:6px;height:6px;background:var(--magenta);border-radius:50%;box-shadow:0 0 8px var(--magenta);animation:blink .8s step-end infinite}
+.intro-bubble{font-size:13.5px;line-height:1.85;color:rgba(224,240,255,.9);margin-bottom:22px;border-left:2px solid rgba(0,255,255,.2);padding-left:12px}
+.intro-bubble em{color:var(--cyan);font-style:normal}
+.intro-btn{font-family:'Press Start 2P',monospace;font-size:8px;color:var(--cyan);border:1px solid rgba(0,255,255,.5);padding:12px 28px;background:rgba(0,255,255,.08);cursor:pointer;display:block;margin:0 auto;transition:background .2s,box-shadow .2s;letter-spacing:.05em}
+.intro-btn:hover{background:rgba(0,255,255,.18);box-shadow:0 0 20px rgba(0,255,255,.25)}
+.intro-bgm-hint{font-size:10px;color:rgba(255,255,255,.35);margin-top:14px;letter-spacing:.05em}
+.intro-bgm-hint.bgm-on{opacity:0;pointer-events:none;transition:opacity .4s}
+
+/* 彩蛋截获弹窗 — 选择后先弹出（打字机+故障闪）再进音游 */
+.modal-backdrop{position:fixed;inset:0;z-index:700;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0);animation:backdropIn .3s ease forwards}
+@keyframes backdropIn{to{background:rgba(0,5,20,.82)}}
+.egg-modal{position:relative;width:min(460px,90vw);background:rgba(4,12,28,.97);border:1px solid rgba(0,255,255,.25);padding:32px 28px 28px;animation:eggModalIn .35s cubic-bezier(.22,1,.36,1) forwards;transform-origin:center;overflow:hidden}
+@keyframes eggModalIn{from{opacity:0;transform:scale(.94) translateY(8px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.egg-modal.glitch-enter{animation:eggModalIn .35s cubic-bezier(.22,1,.36,1) forwards,glitchFlash .5s ease forwards}
+@keyframes glitchFlash{0%{clip-path:inset(0 0 100% 0)}15%{clip-path:inset(0 0 0 0);filter:hue-rotate(90deg) brightness(1.4)}30%{clip-path:inset(30% 0 20% 0);filter:none}45%{clip-path:inset(0 0 0 0);filter:hue-rotate(-30deg)}60%{filter:none}100%{filter:none;clip-path:none}}
+.egg-modal::before,.egg-modal::after,.egg-modal .corner-br,.egg-modal .corner-bl{content:'';position:absolute;width:18px;height:18px;z-index:2}
+.egg-modal::before{top:0;left:0;border-top:2px solid var(--cyan);border-left:2px solid var(--cyan)}
+.egg-modal::after{top:0;right:0;border-top:2px solid var(--magenta);border-right:2px solid var(--magenta)}
+.egg-modal .corner-br{bottom:0;right:0;border-bottom:2px solid var(--cyan);border-right:2px solid var(--cyan)}
+.egg-modal .corner-bl{bottom:0;left:0;border-bottom:2px solid var(--magenta);border-left:2px solid var(--magenta)}
+.egg-modal .scan-beam{position:absolute;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,rgba(0,255,255,.35),transparent);animation:scanBeam 2.8s linear infinite;pointer-events:none;z-index:1}
+@keyframes scanBeam{0%{top:-2px;opacity:0}5%{opacity:1}95%{opacity:.6}100%{top:100%;opacity:0}}
+.egg-modal .sys-header{display:flex;align-items:center;gap:10px;margin-bottom:20px}
+.egg-modal .sys-header .ping{width:7px;height:7px;border-radius:50%;background:var(--cyan);box-shadow:0 0 8px var(--cyan),0 0 16px var(--cyan);animation:pingPulse .8s ease-in-out infinite alternate;flex-shrink:0}
+@keyframes pingPulse{from{opacity:.5;transform:scale(.8)}to{opacity:1;transform:scale(1.1)}}
+.egg-modal .sys-header .label{font-family:'Press Start 2P',monospace;font-size:8px;color:var(--cyan);letter-spacing:.16em;text-shadow:0 0 10px var(--cyan);opacity:.8}
+.egg-modal .msg-wrap{position:relative;padding:16px;border-left:2px solid rgba(0,255,255,.2);margin-bottom:24px}
+.egg-modal .msg-wrap::before{content:'';position:absolute;left:-2px;top:0;bottom:0;width:2px;background:linear-gradient(180deg,var(--cyan),transparent 60%);animation:borderSlide 2s ease-in-out infinite}
+@keyframes borderSlide{0%,100%{opacity:.3}50%{opacity:1}}
+.egg-modal .msg-ding{font-family:'Press Start 2P',monospace;font-size:9px;color:var(--magenta);letter-spacing:.12em;text-shadow:0 0 8px var(--magenta);margin-bottom:12px;opacity:0;animation:fadeInUp .3s ease .1s forwards}
+.egg-modal .msg-text{font-size:15px;font-weight:500;color:rgba(224,240,255,.92);line-height:1.8;letter-spacing:.04em;min-height:3.6em}
+.egg-modal .msg-text .highlight{color:var(--cyan);text-shadow:0 0 12px var(--cyan),0 0 24px rgba(0,255,255,.4);font-weight:600}
+.egg-modal .msg-text .cursor{display:inline-block;width:2px;height:1em;background:var(--cyan);vertical-align:middle;margin-left:2px;animation:blink .6s step-end infinite}
+.egg-modal .option-tag{display:inline-flex;align-items:center;gap:6px;margin-top:12px;padding:5px 10px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);font-family:'Press Start 2P',monospace;font-size:7px;color:rgba(255,255,255,.5);letter-spacing:.1em;opacity:0;animation:fadeInUp .3s ease .8s forwards}
+.egg-modal .option-tag .dot{width:5px;height:5px;border-radius:50%;background:currentColor}
+.egg-modal .enter-btn{display:block;width:100%;padding:14px 20px;border:1px solid var(--cyan);background:rgba(0,255,255,.07);color:var(--cyan);font-family:'Press Start 2P',monospace;font-size:10px;letter-spacing:.12em;cursor:pointer;position:relative;overflow:hidden;text-align:center;transition:background .2s,box-shadow .2s;box-shadow:0 0 12px rgba(0,255,255,.2),inset 0 0 12px rgba(0,255,255,.05);opacity:0;animation:fadeInUp .4s ease 1.2s forwards;clip-path:polygon(8px 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 100%,0 8px)}
+.egg-modal .enter-btn::before{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent 0%,rgba(0,255,255,.12) 50%,transparent 100%);transform:translateX(-100%);transition:transform .4s ease}
+.egg-modal .enter-btn:hover{background:rgba(0,255,255,.14);box-shadow:0 0 24px rgba(0,255,255,.45),inset 0 0 16px rgba(0,255,255,.1)}
+.egg-modal .enter-btn:hover::before{transform:translateX(100%)}
+.egg-modal .enter-btn:active{transform:scale(.98);box-shadow:0 0 8px rgba(0,255,255,.3)}
+.egg-modal .enter-btn .btn-glow{position:absolute;inset:-1px;border:1px solid var(--cyan);opacity:0;animation:btnBreath 2s ease-in-out 1.6s infinite;pointer-events:none}
+@keyframes btnBreath{0%,100%{opacity:0;transform:scale(1)}50%{opacity:.4;transform:scale(1.01)}}
+.egg-modal .status-bar{display:flex;justify-content:space-between;align-items:center;margin-top:16px;padding-top:12px;border-top:1px solid rgba(255,255,255,.06);font-family:'Press Start 2P',monospace;font-size:6px;color:rgba(255,255,255,.2);letter-spacing:.1em;opacity:0;animation:fadeInUp .3s ease 1.4s forwards}
+.egg-modal .status-bar .status-dot{display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--green);margin-right:5px;box-shadow:0 0 6px var(--green);animation:pingPulse .8s ease-in-out infinite alternate}
+.choice-modal{background:rgba(6,14,30,.98);border:1px solid rgba(255,255,255,.2);padding:24px;min-width:260px;text-align:center}
+.choice-modal .choice-title{font-family:'Press Start 2P',monospace;font-size:8px;margin-bottom:16px;letter-spacing:.1em;opacity:.9}
+.choice-modal .choice-btns{display:flex;flex-direction:column;gap:10px}
+.choice-modal .choice-btns button{padding:12px 16px;border:2px solid;font-family:'Press Start 2P',monospace;font-size:8px;cursor:pointer;transition:transform .1s,box-shadow .2s}
+.choice-modal .choice-btns button:active{transform:scale(0.97)}
+.choice-bar{margin-top:20px;padding-top:16px;border-top:1px solid rgba(255,255,255,.12);display:flex;flex-direction:row;flex-wrap:wrap;justify-content:center;gap:10px}
+.choice-bar button{padding:12px 18px;border:2px solid;font-family:'Press Start 2P',monospace;font-size:8px;cursor:pointer;transition:transform .1s,box-shadow .2s;letter-spacing:.08em}
+.choice-bar button:active{transform:scale(0.97)}
+@keyframes fadeInUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+/* MAIN */
+.q3-main{display:none;flex-direction:column;gap:0;width:100%;align-items:center}
+.q3-main.visible{display:flex;animation:slideUp .4s forwards}
+
+/* Progress */
+.q-progress{display:flex;align-items:center;gap:12px;margin-bottom:14px;width:100%}
+.q-progress-label{font-family:'Press Start 2P',monospace;font-size:8px;color:var(--cyan);letter-spacing:.12em;text-shadow:0 0 10px rgba(0,255,255,.5);flex-shrink:0}
+.q-progress-track{flex:1;height:8px;background:rgba(0,255,255,.08);border:1px solid rgba(255,255,255,.25);border-radius:2px;overflow:hidden}
+.q-progress-fill{height:100%;border-radius:1px;background:linear-gradient(90deg,var(--cyan),var(--magenta),var(--yellow));box-shadow:0 0 12px rgba(0,255,255,.4);transition:width .4s ease}
+.q-progress-num{font-family:'Press Start 2P',monospace;font-size:9px;color:var(--magenta);letter-spacing:.08em;text-shadow:0 0 10px rgba(255,0,255,.5);flex-shrink:0}
+
+/* Header */
+.q-header{display:flex;flex-direction:column;gap:10px;align-items:center;text-align:center;width:100%;margin-bottom:14px}
+.q-tag{font-family:'Press Start 2P',monospace;font-size:clamp(9px,2.2vw,11px);letter-spacing:.1em;display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap}
+.q-tag-num{color:var(--cyan);text-shadow:0 0 8px rgba(0,255,255,.4)}
+.q-tag-sep{color:var(--cyan);opacity:.9}
+.q-tag-cat{color:var(--magenta);text-shadow:0 0 8px rgba(255,0,255,.4);font-size:0.95em}
+.q-text{font-size:clamp(18px,4.5vw,22px);font-weight:600;color:rgba(0,255,255,.98);line-height:1.5;text-shadow:0 0 20px rgba(0,255,255,.5),0 0 40px rgba(0,255,255,.2),0 0 60px rgba(0,255,255,.08);font-family:'Noto Sans SC',sans-serif;letter-spacing:.06em;max-width:100%}
+.q-hint{font-size:14px;font-weight:500;color:rgba(255,255,0,.95);font-family:'Noto Sans SC',sans-serif;text-shadow:0 0 12px rgba(255,255,0,.5);letter-spacing:.04em}
+.playing-option-label{font-size:clamp(15px,4vw,19px);font-weight:600;font-family:'Noto Sans SC',sans-serif;line-height:1.4;letter-spacing:.04em;text-align:center;max-width:100%;padding:6px 0}
+
+/* Phase: select */
+.phase-select{width:100%}
+.opt-btn{width:100%;text-align:left;padding:12px 14px;margin-bottom:8px;border:1px solid rgba(255,255,255,.2);background:rgba(20,20,35,.6);cursor:pointer;transition:border-color .2s,background .2s;position:relative;clip-path:polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px)}
+.opt-btn:hover{border-color:rgba(255,255,255,.4);background:rgba(255,255,255,.06)}
+.opt-btn.done{border-color:var(--green);background:rgba(0,255,136,.08)}
+.opt-btn .opt-bar{position:absolute;left:0;top:0;bottom:0;width:4px;background:currentColor}
+.opt-btn .opt-key{font-family:'Press Start 2P',monospace;font-size:9px;margin-right:10px;display:inline-block;vertical-align:middle}
+.opt-btn .opt-txt{font-size:13px;color:rgba(224,240,255,.9);font-family:'Noto Sans SC',sans-serif}
+.opt-btn .opt-done{color:var(--green);font-size:10px;margin-left:6px}
+
+/* Phase: playing */
+.phase-playing{width:100%;display:flex;flex-direction:column;align-items:center}
+.egg-bubble{padding:8px 12px;margin-bottom:8px;border:1px solid rgba(255,121,249,.4);background:rgba(255,0,255,.06);width:100%;text-align:center}
+.egg-bubble .txt{font-size:10px;color:rgba(232,121,249,.9);font-family:'Noto Sans SC',sans-serif}
+.stats-bar{display:flex;justify-content:space-between;align-items:center;width:100%;padding:4px 0;margin-bottom:4px}
+.stats-bar .lv{font-family:'Press Start 2P',monospace;font-size:8px}
+.stats-bar .counts{display:flex;gap:12px;align-items:center;font-family:'Press Start 2P',monospace;font-size:8px}
+.stats-bar .p{color:#00ff88}
+.stats-bar .g{color:#ffff00}
+.stats-bar .m{color:#ff2244}
+.stats-bar .combo{color:#ffff00;margin-left:4px}
+
+.track-wrap{position:relative;width:100%;height:320px;border:1px solid rgba(255,255,255,.15);background:rgba(5,5,15,.95);overflow:hidden}
+.track-mascot-bg{position:absolute;inset:0;z-index:0;pointer-events:none;background-size:contain;background-position:center;background-repeat:no-repeat;opacity:0.28}
+.track-wrap .scan{position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,transparent 0,transparent 2px,rgba(255,255,255,.03) 2px,rgba(255,255,255,.03) 4px);z-index:1}
+.track-wrap .lanes{position:absolute;inset:0;display:flex;justify-content:center;pointer-events:none;z-index:1}
+.track-wrap .lanes-inner{width:262px;display:flex}
+.track-wrap.eight-lane .lanes-inner{width:350px}
+.track-wrap.single-lane .lanes-inner{width:66px}
+.track-wrap .lane{flex:1;border-right:1px solid rgba(255,255,255,.06)}
+.track-wrap .lane:last-child{border-right:none}
+.track-wrap.eight-lane .receptor-arrow,.track-wrap.eight-lane .note-arrow{width:42px;height:42px;min-width:42px}
+.track-wrap.eight-lane .receptor-arrow svg,.track-wrap.eight-lane .note-arrow svg{width:22px;height:22px}
+#notesContainer{position:absolute;left:50%;transform:translateX(-50%);width:262px;top:0;height:100%;pointer-events:none;z-index:2}
+.track-wrap.eight-lane #notesContainer{width:350px}
+.track-wrap.single-lane #notesContainer{width:66px}
+.receptor-line{position:absolute;left:0;right:0;height:1px;z-index:5;top:104px}
+.track-wrap.eight-lane .receptor-line{top:82px}
+.receptor-line .line{margin:0 auto;width:262px;height:1px}
+.track-wrap.eight-lane .receptor-line .line{width:350px}
+.track-wrap.single-lane .receptor-line .line{width:66px}
+.receptor-row{position:absolute;left:50%;transform:translateX(-50%);display:flex;gap:2px;z-index:10;top:40px}
+.receptor-arrow{width:64px;height:64px;border:2px solid;display:flex;align-items:center;justify-content:center;transition:border-color .1s,background .1s,box-shadow .1s}
+.receptor-arrow svg{width:36px;height:36px;opacity:.7}
+.receptor-arrow.hit,.receptor-arrow.great,.receptor-arrow.miss{box-shadow:0 0 12px currentColor}
+.note-arrow{position:absolute;width:64px;height:64px;border:2px solid;display:flex;align-items:center;justify-content:center;transition:none;z-index:2}
+.note-arrow svg{width:36px;height:36px}
+.judgment-pop{position:absolute;left:50%;transform:translateX(-50%);top:25%;z-index:30;pointer-events:none;font-family:'Press Start 2P',monospace;font-size:14px;animation:judgeOut .6s ease forwards}
+@keyframes judgeOut{0%{opacity:1;transform:translateX(-50%) scale(0.8)}100%{opacity:0;transform:translateX(-50%) translateY(-30px) scale(1.2)}}
+.finish-overlay{position:absolute;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:20;font-family:'Press Start 2P',monospace;font-size:16px}
+
+.countdown-overlay{position:fixed;inset:0;z-index:40;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center}
+.countdown-overlay .num{font-family:'Press Start 2P',monospace;font-size:48px;animation:countPop .5s ease}
+.countdown-overlay .go{font-size:24px}
+@keyframes countPop{0%{transform:scale(2);opacity:0}50%{transform:scale(1.1)}100%{transform:scale(1);opacity:1}}
+
+.progress-bar-wrap{width:100%;padding:4px 0}
+.progress-bar-wrap .bar{height:8px;background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.2);overflow:hidden}
+.progress-bar-wrap .fill{height:100%;transition:width .15s}
+.progress-bar-wrap .labels{display:flex;justify-content:space-between;margin-top:4px;font-family:'Press Start 2P',monospace;font-size:6px;color:rgba(255,255,255,.5)}
+
+.dpad-wrap{position:relative;width:228px;height:228px;margin-top:12px}
+.dpad-wrap .btn{position:absolute;width:76px;height:76px;border:2px solid #555;background:rgba(20,20,30,.9);display:flex;align-items:center;justify-content:center;cursor:pointer;user-select:none;touch-action:manipulation;-webkit-tap-highlight-color:transparent;clip-path:polygon(8px 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 100%,0 8px);transition:background .15s,border-color .15s}
+.dpad-wrap .btn:active{transform:scale(0.95)}
+.dpad-wrap .btn svg{width:38px;height:38px;stroke:#aaa}
+.dpad-wrap .btn.up{top:0;left:50%;transform:translateX(-50%)}
+.dpad-wrap .btn.down{bottom:0;left:50%;transform:translateX(-50%)}
+.dpad-wrap .btn.left{left:0;top:50%;transform:translateY(-50%)}
+.dpad-wrap .btn.right{right:0;top:50%;transform:translateY(-50%)}
+.dpad-wrap .center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:44px;height:44px;border:1px solid rgba(255,255,255,.2);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Press Start 2P',monospace;font-size:6px;color:rgba(255,255,255,.4);pointer-events:none}
+/* 选择 A 时：只保留 ← 键，隐藏 ↑↓→ */
+.dpad-wrap.lv-a{width:160px;height:160px}
+.dpad-wrap.lv-a .btn.left{width:120px;height:120px;left:50%;top:50%;transform:translate(-50%,-50%);clip-path:polygon(10px 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%,0 10px)}
+.dpad-wrap.lv-a .btn.left svg{width:56px;height:56px}
+.dpad-wrap.lv-a .btn.up,.dpad-wrap.lv-a .btn.down,.dpad-wrap.lv-a .btn.right{display:none}
+.dpad-wrap.lv-a .center{display:none}
+.dpad-wrap .btn.nw,.dpad-wrap .btn.ne,.dpad-wrap .btn.sw,.dpad-wrap .btn.se{display:none}
+.dpad-wrap.lv-e{display:grid;grid-template-columns:1fr 1fr 1fr;grid-template-rows:1fr 1fr 1fr;gap:4px;align-items:stretch;justify-items:stretch}
+.dpad-wrap.lv-e .btn{position:relative;width:auto;height:auto;min-width:0;min-height:0}
+.dpad-wrap.lv-e .btn.nw,.dpad-wrap.lv-e .btn.ne,.dpad-wrap.lv-e .btn.sw,.dpad-wrap.lv-e .btn.se{display:flex}
+.dpad-wrap.lv-e .btn.up{grid-column:2;grid-row:1}
+.dpad-wrap.lv-e .btn.down{grid-column:2;grid-row:3}
+.dpad-wrap.lv-e .btn.left{grid-column:1;grid-row:2}
+.dpad-wrap.lv-e .btn.right{grid-column:3;grid-row:2}
+.dpad-wrap.lv-e .btn.nw{grid-column:1;grid-row:1}
+.dpad-wrap.lv-e .btn.ne{grid-column:3;grid-row:1}
+.dpad-wrap.lv-e .btn.sw{grid-column:1;grid-row:3}
+.dpad-wrap.lv-e .btn.se{grid-column:3;grid-row:3}
+.dpad-wrap.lv-e .center{position:relative;grid-column:2;grid-row:2;align-self:center;justify-self:center;top:auto;left:auto;transform:none}
+
+.game-mascot-wrap{display:none}
+.game-mascot{height:100px;width:auto;object-fit:contain;display:inline-block;vertical-align:middle}
+
+.skip-btn{margin-top:12px;padding:10px 20px;border:1px dashed rgba(255,255,255,.3);background:transparent;color:rgba(255,255,255,.5);font-family:'Press Start 2P',monospace;font-size:8px;cursor:pointer;transition:color .2s,border-color .2s}
+.skip-btn:hover{color:var(--magenta);border-color:var(--magenta)}
+
+.back-btn{margin-top:12px;font-size:8px;color:rgba(255,255,255,.5);background:none;border:none;cursor:pointer;font-family:'Press Start 2P',monospace}
+.back-btn:hover{color:rgba(255,255,255,.8)}
+
+/* Phase: result — 修复布局 */
+.phase-result{
+  width:100%;
+  text-align:center;
+  padding:20px 0 28px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:0;
+}
+.result-icon{
+  width:80px;
+  height:80px;
+  margin-bottom:14px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  position:relative;
+  overflow:hidden;
+  border-radius:8px;
+}
+.result-icon .icon-glyph{
+  font-family:'Press Start 2P',monospace;
+  font-size:36px;
+  line-height:1;
+}
+.result-icon .result-icon-cat{
+  position:absolute;
+  inset:0;
+  background-image:url(cat.jpg);
+  background-repeat:no-repeat;
+  background-size:200% 100%;
+  background-position:0 0;
+  background-color:rgba(8,18,35,.97);
+  border-radius:8px;
+  display:none;
+}
+.result-icon .result-icon-cat.show{
+  display:block;
+}
+.result-icon .icon-ring{
+  position:absolute;
+  inset:0;
+  border:2px solid currentColor;
+  border-radius:2px;
+  opacity:.3;
+  animation:ringPulse 1.5s ease-in-out infinite;
+  pointer-events:none;
+}
+@keyframes ringPulse{
+  0%,100%{transform:scale(1);opacity:.3}
+  50%{transform:scale(1.08);opacity:.6}
+}
+.result-title{
+  font-family:'Press Start 2P',monospace;
+  font-size:clamp(13px,3.5vw,18px);
+  margin-bottom:18px;
+  letter-spacing:.04em;
+  line-height:1.5;
+}
+.result-stats{
+  width:100%;
+  max-width:340px;
+  margin:0 auto 18px;
+  font-family:'Press Start 2P',monospace;
+  font-size:8px;
+}
+.result-stats .row{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  gap:16px;
+  margin-bottom:10px;
+  flex-wrap:nowrap;
+}
+.result-stats .stat-item{
+  white-space:nowrap;
+  flex-shrink:0;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:4px;
+}
+.result-stats .stat-label{
+  font-size:6px;
+  opacity:.6;
+  letter-spacing:.08em;
+}
+.result-stats .stat-val{
+  font-size:14px;
+  letter-spacing:.04em;
+}
+.result-stats .stat-item.perf .stat-label{color:#00ff88}
+.result-stats .stat-item.perf .stat-val{color:#00ff88;text-shadow:0 0 10px #00ff8880}
+.result-stats .stat-item.great .stat-label{color:#ffff00}
+.result-stats .stat-item.great .stat-val{color:#ffff00;text-shadow:0 0 10px #ffff0080}
+.result-stats .stat-item.miss .stat-label{color:#ff2244}
+.result-stats .stat-item.miss .stat-val{color:#ff2244;text-shadow:0 0 10px #ff224480}
+.result-stats .divider{width:1px;height:32px;background:rgba(255,255,255,.15);flex-shrink:0}
+.result-stats .bar-wrap{
+  height:6px;
+  margin-top:4px;
+  background:rgba(0,0,0,.5);
+  border:1px solid rgba(255,255,255,.15);
+  overflow:hidden;
+  border-radius:2px;
+}
+.result-stats .bar-fill{
+  height:100%;
+  transition:width .5s ease;
+  border-radius:1px;
+}
+.result-flavor{
+  margin-bottom:14px;
+  font-size:14px;
+  font-family:'Noto Sans SC','Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji',sans-serif;
+  padding:10px 16px;
+  line-height:1.7;
+  max-width:100%;
+  border:1px solid rgba(255,255,255,.08);
+  background:rgba(255,255,255,.03);
+  width:100%;
+}
+.result-spring{
+  margin-bottom:16px;
+  font-size:11px;
+  color:rgba(255,255,255,.55);
+  font-family:'Noto Sans SC',sans-serif;
+  padding:0 8px;
+  line-height:1.6;
+  width:100%;
+  text-align:center;
+}
+.result-actions{
+  display:flex;
+  gap:10px;
+  justify-content:center;
+  flex-wrap:wrap;
+  margin-top:6px;
+  width:100%;
+}
+.result-actions button{
+  padding:12px 18px;
+  border:1px solid;
+  font-family:'Press Start 2P',monospace;
+  font-size:8px;
+  cursor:pointer;
+  transition:opacity .2s,transform .2s;
+  letter-spacing:.02em;
+  line-height:1.6;
+}
+.result-actions button:active{transform:scale(0.96)}
+.result-actions .btn-retry{
+  border-color:rgba(255,255,255,.35);
+  color:rgba(255,255,255,.8);
+  background:rgba(0,0,0,.2);
+}
+.result-actions .btn-retry:hover{
+  border-color:rgba(255,255,255,.6);
+  background:rgba(255,255,255,.05);
+}
+.result-actions .btn-again{
+  border-color:var(--cyan);
+  color:var(--cyan);
+  background:rgba(0,255,255,.08);
+}
+.result-actions .btn-again:hover{
+  background:rgba(0,255,255,.15);
+}
+.result-actions .btn-confirm{
+  border-color:var(--cyan);
+  color:var(--cyan);
+  background:rgba(0,255,255,.12);
+  box-shadow:0 0 14px rgba(0,255,255,.3);
+}
+.result-actions .btn-confirm:hover{
+  background:rgba(0,255,255,.2);
+  box-shadow:0 0 20px rgba(0,255,255,.5);
+}
+</style>
+</head>
+<body>
+<audio id="bgm" src="drama.wav" loop preload="auto"></audio>
+<audio id="bgmA" src="A.m4a" preload="auto"></audio>
+<audio id="bgmB" src="B.m4a" preload="auto"></audio>
+<audio id="bgmC" src="C.m4a" preload="auto"></audio>
+<audio id="bgmD" src="D.m4a" preload="auto"></audio>
+<audio id="bgmE" src="E.m4a" preload="auto"></audio>
+<audio id="systemBgm" src="system.wav" loop preload="auto"></audio>
+<audio id="readyGoAudio" preload="auto"><source src="ready go.m4a" type="audio/mp4"></audio>
+<div id="scanline"></div>
+
+<!-- INTRO — 前置介绍（与 Q1/Q2 一致） -->
+<div class="intro-overlay" id="introOverlay">
+  <div class="intro-modal">
+    <div class="bl"></div><div class="br"></div>
+    <div class="intro-speaker">春姬 · Niuma</div>
+    <div class="intro-bubble">
+      <em>「指尖蹦迪术」</em>——旧时代人类的赛博运动方式<br><br>
+      全靠把十根指头练成残影，据说只要<em>「抽搐」</em>得够快，灵魂就能短暂<em>逃离肉身</em></em><br><br>
+      别愣着了，帮你把锈住的<em>节奏回路</em>搓活！
+    </div>
+    <button class="intro-btn" id="introBtn">开始挑战</button>
+  </div>
+</div>
+
+<div id="app">
+  <div class="q3-main" id="q3Main">
+  <div class="q-progress">
+    <span class="q-progress-label">PROGRESS</span>
+    <div class="q-progress-track"><div class="q-progress-fill" id="progressFill" style="width:80%"></div></div>
+    <span class="q-progress-num" id="progressNum">4/5</span>
+  </div>
+  <div class="q-header">
+    <div class="q-tag" id="headerTag"><span class="q-tag-num">QUESTION_04</span><span class="q-tag-sep">//</span><span class="q-tag-cat">背包困惑度</span></div>
+    <div class="q-text" id="headerText">你对背包操作的困惑程度有几分？</div>
+    <div class="q-hint" id="headerHint">选择最符合你感受的选项</div>
+    <div class="playing-option-label" id="playingOptionLabel" style="display:none"></div>
+  </div>
+
+  <div id="phaseSelect" class="phase-select">
+    <button class="opt-btn" data-key="A"><span class="opt-bar" style="color:#00ffff"></span><span class="opt-key" style="color:#00ffff">A</span><span class="opt-txt">全都懂的，用小拇指就能掌握全部</span><span class="opt-done" style="display:none">✓</span></button>
+    <button class="opt-btn" data-key="B"><span class="opt-bar" style="color:#00ff88"></span><span class="opt-key" style="color:#00ff88">B</span><span class="opt-txt">懂个大概，一只手掌握是没得问题</span><span class="opt-done" style="display:none">✓</span></button>
+    <button class="opt-btn" data-key="C"><span class="opt-bar" style="color:#ffff00"></span><span class="opt-key" style="color:#ffff00">C</span><span class="opt-txt">似懂非懂，得两只手才能勉强掌握</span><span class="opt-done" style="display:none">✓</span></button>
+    <button class="opt-btn" data-key="D"><span class="opt-bar" style="color:#ff8800"></span><span class="opt-key" style="color:#ff8800">D</span><span class="opt-txt">有点不懂，我还得找人再借一只手</span><span class="opt-done" style="display:none">✓</span></button>
+    <button class="opt-btn" data-key="E"><span class="opt-bar" style="color:#ff0044"></span><span class="opt-key" style="color:#ff0044">E</span><span class="opt-txt">根本不懂，手和脚一块上都难把握</span><span class="opt-done" style="display:none">✓</span></button>
+    <div id="choiceBar" class="choice-bar" style="display:none">
+      <button type="button" id="choiceBarAgain">再来一次</button>
+      <button type="button" id="choiceBarConfirm">确定选择</button>
+    </div>
+  </div>
+
+  <div id="phasePlaying" class="phase-playing" style="display:none">
+    <div class="stats-bar"><span class="lv" id="statsLv"></span><div class="counts"><span class="p" id="statP">0P</span><span class="g" id="statG">0G</span><span class="m" id="statM">0M</span><span class="combo" id="statCombo" style="display:none"></span></div></div>
+    <div class="game-mascot-wrap"><img id="gameMascotImg" src="m1.GIF" alt="" class="game-mascot" /></div>
+    <div class="track-wrap" id="trackWrap">
+      <div class="track-mascot-bg" id="trackMascotBg"></div>
+      <div class="scan"></div>
+      <div class="lanes"><div class="lanes-inner"><div class="lane"></div><div class="lane"></div><div class="lane"></div><div class="lane"></div></div></div>
+      <div class="receptor-line" id="receptorLine"><div class="line" id="receptorLineGrad"></div></div>
+      <div class="receptor-row" id="receptorRow"></div>
+      <div id="notesContainer"></div>
+      <div id="judgmentsContainer"></div>
+      <div class="finish-overlay" id="finishOverlay" style="display:none"><span id="finishText">FINISH!</span></div>
+    </div>
+    <div class="countdown-overlay" id="countdownOverlay" style="display:none"><span class="num" id="countdownNum">3</span></div>
+    <div class="progress-bar-wrap"><div class="bar"><div class="fill" id="gameProgressFill" style="width:0%;background:#00ffff"></div></div><div class="labels"><span id="gameProgressLabel">0/0</span><span id="gameAccLabel">0% ACC</span></div></div>
+    <div class="dpad-wrap" id="dpadWrap">
+      <button type="button" class="btn up" data-arrow="↑" aria-label="上"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 4v16m0-16l-6 6m6-6l6 6"/></svg></button>
+      <button type="button" class="btn down" data-arrow="↓" aria-label="下"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 20V4m0 16l-6-6m6 6l6-6"/></svg></button>
+      <button type="button" class="btn left" data-arrow="←" aria-label="左"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 12H4m0 0l6-6m-6 6l6 6"/></svg></button>
+      <button type="button" class="btn right" data-arrow="→" aria-label="右"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 12h16m0 0l-6-6m6 6l-6 6"/></svg></button>
+      <button type="button" class="btn nw" data-arrow="↖" aria-label="左上"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 12L4 4M4 4L7 4M4 4L4 7"/></svg></button>
+      <button type="button" class="btn ne" data-arrow="↗" aria-label="右上"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 12L20 4M20 4L17 4M20 4L20 7"/></svg></button>
+      <button type="button" class="btn sw" data-arrow="↙" aria-label="左下"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 12L4 20M4 20L7 20M4 20L4 17"/></svg></button>
+      <button type="button" class="btn se" data-arrow="↘" aria-label="右下"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 12L20 20M20 20L17 20M20 20L20 17"/></svg></button>
+      <div class="center">PAD</div>
+    </div>
+    <button type="button" class="skip-btn" id="skipBtn" style="display:none">⏭ 我选择放弃挣扎</button>
+    <button type="button" class="back-btn" id="backBtn">返回选择</button>
+  </div>
+
+  <div id="phaseResult" class="phase-result" style="display:none">
+    <!-- icon 用Press Start 2P字符代替emoji，避免渲染问题 -->
+    <div class="result-icon" id="resultIcon">
+      <span class="icon-glyph" id="resultGlyph"></span>
+      <div class="result-icon-cat" id="resultIconCat"></div>
+      <div class="icon-ring" id="resultRing"></div>
+    </div>
+    <div class="result-title" id="resultTitle"></div>
+    <div class="result-stats">
+      <div class="row">
+        <div class="stat-item perf">
+          <span class="stat-label">PERFECT</span>
+          <span class="stat-val" id="resP">0</span>
+        </div>
+        <div class="divider"></div>
+        <div class="stat-item great">
+          <span class="stat-label">GREAT</span>
+          <span class="stat-val" id="resG">0</span>
+        </div>
+        <div class="divider"></div>
+        <div class="stat-item miss">
+          <span class="stat-label">MISS</span>
+          <span class="stat-val" id="resM">0</span>
+        </div>
+      </div>
+      <div class="bar-wrap"><div class="bar-fill" id="resBarFill" style="width:0%"></div></div>
+    </div>
+    <div class="result-flavor" id="resultFlavor"></div>
+    <div class="result-spring" id="resultSpring" style="display:none"></div>
+    <div class="result-actions" id="resultActions"></div>
+  </div>
+  </div>
+</div>
+
+<script>
+(function(){
+'use strict';
+
+var ARROWS = ['←','↑','→','↓'];
+var ARROWS_8 = ['←','↑','→','↓','↖','↗','↙','↘'];
+var ARROW_KEYS = { ArrowLeft:'←', ArrowUp:'↑', ArrowRight:'→', ArrowDown:'↓', Numpad7:'↖', Numpad9:'↗', Numpad1:'↙', Numpad3:'↘' };
+var ARROW_SVG = { '←':'M20 12H4m0 0l6-6m-6 6l6 6', '↑':'M12 4v16m0-16l-6 6m6-6l6 6', '→':'M4 12h16m0 0l-6-6m6 6l-6 6', '↓':'M12 20V4m0 16l-6-6m6 6l6-6', '↖':'M12 12L4 4M4 4L7 4M4 4L4 7', '↗':'M12 12L20 4M20 4L17 4M20 4L20 7', '↙':'M12 12L4 20M4 20L7 20M4 20L4 17', '↘':'M12 12L20 20M20 20L17 20M20 20L20 17' };
+var ARROW_TO_LANE = { '←':0, '↑':1, '→':2, '↓':3, '↖':4, '↗':5, '↙':6, '↘':7 };
+
+var PERFECT_WINDOW = 450;
+var GREAT_WINDOW = 950;
+var MISS_EXPIRE = 950;
+var TRACK_HEIGHT = 320;
+var RECEPTOR_Y = 104;
+var currentReceptorY = 104;
+var APPROACH_TIME = 1800;
+var currentApproachTime = 1800;
+
+// 用Press Start 2P可渲染的ASCII字符代替emoji
+var RESULT_GLYPHS = {
+  perfectClear: '★',
+  clear: '♪',
+  failPass: '◎',
+  fail: '✕',
+  skipped: '▶'
+};
+
+function generateSequence(length, seed){
+  var out = [], rng = seed;
+  for(var i = 0; i < length; i++){
+    rng = (rng * 1103515245 + 12345) & 0x7fffffff;
+    out.push(ARROWS[rng % 4]);
+  }
+  return out;
+}
+function generateSequenceE(durationMs){
+  var seq = [], times = [];
+  var rng = Math.floor(Math.random() * 0x7fffffff) || 1;
+  var startMs = 600;
+  var endMs = Math.max(3000, durationMs - 600);
+  var t = startMs;
+  while(t < endMs){
+    rng = (rng * 1103515245 + 12345) & 0x7fffffff;
+    var count = 1 + ((rng >>> 5) % 4);
+    for(var j = 0; j < count; j++){
+      rng = (rng * 1103515245 + 12345) & 0x7fffffff;
+      seq.push(ARROWS_8[(rng >>> 5) % 8]);
+      times.push(t);
+    }
+    rng = (rng * 1103515245 + 12345) & 0x7fffffff;
+    t += 55 + ((rng >>> 4) % 95);
+  }
+  return { sequence: seq, customTimes: times };
+}
+function generateSequenceD(){
+  var seq = [], times = [];
+  var rng = Math.floor(Math.random() * 0x7fffffff) || 1;
+  var t = 500;
+  var endT = 11000;
+  while(t < endT){
+    rng = (rng * 1103515245 + 12345) & 0x7fffffff;
+    var count = 1 + (rng % 3);
+    var dirs = ['←','↑','→','↓'].slice();
+    for(var k = dirs.length - 1; k > 0; k--){
+      rng = (rng * 1103515245 + 12345) & 0x7fffffff;
+      var swap = rng % (k + 1);
+      var tmp = dirs[k]; dirs[k] = dirs[swap]; dirs[swap] = tmp;
+    }
+    for(var j = 0; j < count; j++){
+      seq.push(dirs[j]);
+      times.push(t);
+    }
+    rng = (rng * 1103515245 + 12345) & 0x7fffffff;
+    t += 280 + (rng % 220);
+  }
+  return { sequence: seq, customTimes: times };
+}
+var OPTIONS = [
+  { key:'A', text:'全都懂的，用小拇指就能掌握全部', sequence:['←','←'], color:'#00ffff', bpm:60, canFailPass:false, canSkip:false, clearFlavor:'轻松拿捏，你就是背包操作の神', failFlavor:'操作小失误而已，理解直接拉满！', failPassFlavor:'', skipFlavor:'', customTimes:[3000,6000] },
+  { key:'B', text:'懂个大概，一只手掌握是没得问题', sequence:['←','↑','→','↓'], color:'#00ff88', bpm:80, canFailPass:false, canSkip:false, clearFlavor:'一只手轻松拿捏，另一只手尽管去摸鱼', failFlavor:'手在摸鱼，脑子早已拿捏', failPassFlavor:'', skipFlavor:'', customTimes:[3000,6000,9000,12000] },
+  { key:'C', text:'似懂非懂，得两只手才能勉强掌握', sequence:['←','←','→','→','↓','↓'], color:'#ffff00', bpm:100, canFailPass:true, canSkip:true, clearFlavor:'居然通了？你比自己想象的要强', failFlavor:'', failPassFlavor:'这才对味！手忙脚乱才是「似懂非懂」的精髓', skipFlavor:'明智的选择，似懂非懂就别硬撑了嘛~', customTimes:[2000,4000,6000,8000,10000,12000] },
+  { key:'D', text:'有点不懂，我还得找人再借一只手', sequence:['←','↑','→','↓','←','↑','→','↓','←','↑','→','↓'], color:'#ff8800', bpm:115, canFailPass:true, canSkip:true, clearFlavor:'你居然三只手通关了？？借的那只手是谁的！', failFlavor:'', failPassFlavor:'大脑：已超载，先下班了', skipFlavor:'不硬扛，是高情商求生，棒！', customTimes:[800,1600,2400,3200,4000,4800,5600,6400,7200,8000,8800,9600] },
+  { key:'E', text:'根本不懂，手和脚一块上都难把握', sequence:[], color:'#ff0044', bpm:140, canFailPass:true, canSkip:true, clearFlavor:'不可能……这绝对是外挂！！', failFlavor:'', failPassFlavor:'完美诠释了什么叫「根本不懂」，你的手脚已经打结了吧？', skipFlavor:'理智上线，避免精神污染...', customTimes:[] }
+];
+
+var audioCtx = null;
+function getAudioCtx(){ if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)(); return audioCtx; }
+function beep(freq, duration, type, gain){
+  try{
+    var ctx = getAudioCtx();
+    var o = ctx.createOscillator();
+    var g = ctx.createGain();
+    o.connect(g); g.connect(ctx.destination);
+    o.frequency.value = freq;
+    o.type = type || 'sine';
+    g.gain.setValueAtTime(gain != null ? gain : 0.38, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration);
+    o.start(ctx.currentTime);
+    o.stop(ctx.currentTime + duration);
+  }catch(e){}
+}
+function playCountdownBeep(n){ beep(n === 0 ? 880 : 440 + n * 100, 0.08, 'square'); }
+function playHitSfx(){ beep(660, 0.06, 'square', 0.58); }
+function playMissSfx(){ beep(220, 0.12, 'sawtooth', 0.58); }
+function playModalDing(){
+  try{
+    var ctx = getAudioCtx();
+    var o1 = ctx.createOscillator(), o2 = ctx.createOscillator(), g = ctx.createGain();
+    o1.connect(g); o2.connect(g); g.connect(ctx.destination);
+    o1.frequency.value = 640; o2.frequency.value = 960;
+    o1.type = 'sine'; o2.type = 'sine';
+    g.gain.setValueAtTime(0.75, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.14);
+    o1.start(ctx.currentTime); o2.start(ctx.currentTime + 0.06);
+    o1.stop(ctx.currentTime + 0.08); o2.stop(ctx.currentTime + 0.14);
+  }catch(e){}
+}
+function playTypeTick(){
+  try{
+    var ctx = getAudioCtx();
+    var o = ctx.createOscillator(), g = ctx.createGain();
+    o.connect(g); g.connect(ctx.destination);
+    o.frequency.value = 880;
+    o.type = 'square';
+    g.gain.setValueAtTime(0.38, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.003, ctx.currentTime + 0.02);
+    o.start(ctx.currentTime);
+    o.stop(ctx.currentTime + 0.02);
+  }catch(e){}
+}
+
+var beatInterval = null;
+function startBeatEngine(bpm){ stopBeatEngine(); var ms = 60000 / bpm; beatInterval = setInterval(function(){ beep(200, 0.02, 'sine'); }, ms); }
+function stopBeatEngine(){ if(beatInterval){ clearInterval(beatInterval); beatInterval = null; } }
+
+var phase = 'select', selectedOption = null, gameResult = null, completedKey = null;
+var gameStartTime = 0, notes = [], notePositions = {}, judgments = [], judgmentId = 0;
+var hits = 0, greats = 0, misses = 0, combo = 0, finished = false;
+var rafId = 0;
+
+function showPhase(name){
+  document.getElementById('phaseSelect').style.display = name === 'select' ? 'block' : 'none';
+  document.getElementById('phasePlaying').style.display = name === 'playing' ? 'flex' : 'none';
+  document.getElementById('phaseResult').style.display = name === 'result' ? 'flex' : 'none';
+  var isPlaying = name === 'playing';
+  var tagEl = document.getElementById('headerTag');
+  var textEl = document.getElementById('headerText');
+  var hintEl = document.getElementById('headerHint');
+  var optEl = document.getElementById('playingOptionLabel');
+  if(tagEl) tagEl.style.display = isPlaying ? 'none' : 'flex';
+  if(textEl) textEl.style.display = isPlaying ? 'none' : 'block';
+  if(hintEl) hintEl.style.display = isPlaying ? 'none' : 'block';
+  if(optEl) optEl.style.display = isPlaying ? 'block' : 'none';
+}
+
+function renderReceptors(option){
+  var row = document.getElementById('receptorRow');
+  row.innerHTML = '';
+  var arrows = (option.key === 'E') ? ARROWS_8 : ARROWS;
+  arrows.forEach(function(arrow){
+    var div = document.createElement('div');
+    div.className = 'receptor-arrow';
+    div.dataset.arrow = arrow;
+    div.style.borderColor = option.color + '40';
+    div.style.background = option.color + '08';
+    div.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="' + option.color + '99" stroke-width="2"><path d="' + ARROW_SVG[arrow] + '"/></svg>';
+    row.appendChild(div);
+  });
+  document.getElementById('receptorLineGrad').style.background = 'linear-gradient(90deg, transparent, ' + option.color + '99, ' + option.color + ', ' + option.color + '99, transparent)';
+}
+
+function flashArrow(arrow, type){
+  var color = selectedOption.color;
+  var c = type === 'hit' ? color : type === 'great' ? '#ffff00' : '#ff0044';
+  var rec = document.querySelector('.receptor-arrow[data-arrow="' + arrow + '"]');
+  var btn = document.querySelector('.dpad-wrap .btn[data-arrow="' + arrow + '"]');
+  if(rec){ rec.classList.add(type); rec.style.borderColor = c; rec.style.background = c + '25'; rec.style.boxShadow = '0 0 12px ' + c + '80'; }
+  if(btn){ btn.style.borderColor = c; btn.style.background = c + '40'; }
+  var opt = selectedOption;
+  setTimeout(function(){
+    if(rec){ rec.classList.remove('hit','great','miss'); rec.style.borderColor = (opt ? opt.color : '#00ffff') + '40'; rec.style.background = (opt ? opt.color : '#00ffff') + '08'; rec.style.boxShadow = 'none'; }
+    if(btn){ btn.style.borderColor = '#555'; btn.style.background = 'rgba(20,20,30,.9)'; }
+  }, 200);
+}
+
+function addJudgment(type, color){
+  judgmentId++;
+  var jColor = type === 'PERFECT' ? color : type === 'GREAT' ? '#ffff00' : '#ff0044';
+  var el = document.createElement('div');
+  el.className = 'judgment-pop';
+  el.style.color = jColor;
+  el.style.textShadow = '0 0 10px ' + jColor;
+  el.textContent = type + '!';
+  el.dataset.id = judgmentId;
+  document.getElementById('judgmentsContainer').appendChild(el);
+  setTimeout(function(){ var e = document.querySelector('.judgment-pop[data-id="' + el.dataset.id + '"]'); if(e) e.remove(); }, 600);
+}
+
+function updateStats(){
+  document.getElementById('statP').textContent = hits + 'P';
+  document.getElementById('statG').textContent = greats + 'G';
+  document.getElementById('statM').textContent = misses + 'M';
+  var co = document.getElementById('statCombo');
+  if(combo > 1){ co.style.display = 'inline'; co.textContent = combo + 'x'; } else { co.style.display = 'none'; }
+  var total = notes.length;
+  var processed = hits + greats + misses;
+  document.getElementById('gameProgressFill').style.width = (processed / total * 100) + '%';
+  document.getElementById('gameProgressLabel').textContent = processed + '/' + total;
+  document.getElementById('gameAccLabel').textContent = (processed ? Math.round((hits + greats) / processed * 100) : 0) + '% ACC';
+}
+
+function handleArrowInput(arrow){
+  if(!selectedOption || finished) return;
+  var now = performance.now();
+  var elapsed = now - gameStartTime;
+  var lane = ARROW_TO_LANE[arrow];
+  var bestNote = null, bestDelta = Infinity;
+  notes.forEach(function(n){
+    if(n.state !== 'active' || n.lane !== lane) return;
+    var delta = Math.abs(n.targetTime - elapsed);
+    if(delta <= GREAT_WINDOW && delta < bestDelta){ bestDelta = delta; bestNote = n; }
+  });
+  if(bestNote){
+    if(bestDelta <= PERFECT_WINDOW){
+      bestNote.state = 'hit';
+      if(bestNote.el) bestNote.el.style.display = 'none';
+      hits++; combo++;
+      addJudgment('PERFECT', selectedOption.color);
+      flashArrow(arrow, 'hit');
+      playHitSfx();
+    } else {
+      bestNote.state = 'great';
+      if(bestNote.el) bestNote.el.style.display = 'none';
+      greats++; combo++;
+      addJudgment('GREAT', selectedOption.color);
+      flashArrow(arrow, 'great');
+      playHitSfx();
+    }
+    updateStats();
+  } else {
+    flashArrow(arrow, 'miss');
+  }
+}
+
+function gameLoop(){
+  if(finished) return;
+  var now = performance.now();
+  var elapsed = now - gameStartTime;
+  notes.forEach(function(note){
+    if(note.state !== 'active') return;
+    var timeDelta = note.targetTime - elapsed;
+    var yPos = currentReceptorY + (timeDelta / currentApproachTime) * (TRACK_HEIGHT - currentReceptorY);
+    notePositions[note.id] = yPos;
+    if(timeDelta < -MISS_EXPIRE){
+      note.state = 'miss';
+      if(note.el) note.el.style.display = 'none';
+      misses++; combo = 0;
+      addJudgment('MISS', selectedOption.color);
+      playMissSfx();
+    }
+  });
+  notes.forEach(function(note){
+    if(note.state !== 'active') return;
+    if(note.el) note.el.style.top = notePositions[note.id] + 'px';
+  });
+  updateStats();
+  var allDone = notes.every(function(n){ return n.state !== 'active'; });
+  if(allDone){
+    finished = true;
+    stopBeatEngine();
+    document.getElementById('finishOverlay').style.display = 'flex';
+    setTimeout(function(){ onGameFinish(); }, 600);
+    return;
+  }
+  rafId = requestAnimationFrame(gameLoop);
+}
+
+function stopGameTrackBgm(){
+  if(!selectedOption) return;
+  if(selectedOption.key === 'A'){ var b = document.getElementById('bgmA'); if(b) b.pause(); }
+  if(selectedOption.key === 'B'){ var b = document.getElementById('bgmB'); if(b) b.pause(); }
+  if(selectedOption.key === 'C'){ var b = document.getElementById('bgmC'); if(b) b.pause(); }
+  if(selectedOption.key === 'D'){ var b = document.getElementById('bgmD'); if(b) b.pause(); }
+  if(selectedOption.key === 'E'){ var b = document.getElementById('bgmE'); if(b) b.pause(); }
+  if(selectedOption.key === 'A' || selectedOption.key === 'B' || selectedOption.key === 'C' || selectedOption.key === 'D' || selectedOption.key === 'E') if(bgm) bgm.play();
+}
+function onGameFinish(){
+  stopGameTrackBgm();
+  if(selectedOption) optionPlayed[selectedOption.key] = true;
+  phase = 'result';
+  gameResult = { completed:true, hits:hits, greats:greats, misses:misses, total:notes.length, skipped:false };
+  showPhase('result');
+  renderResult();
+}
+
+function renderResult(){
+  var opt = selectedOption;
+  var res = gameResult;
+  var normalClear = res.misses === 0 && !res.skipped;
+  var perfectClear = res.misses === 0 && !res.skipped;
+  var isPassed = normalClear || opt.canFailPass || res.skipped;
+
+  // 决定icon字符
+  var glyph = '';
+  var title = '';
+  if(res.skipped){
+    glyph = RESULT_GLYPHS.skipped;
+    title = 'STAGE SKIPPED';
+  } else if(perfectClear){
+    glyph = RESULT_GLYPHS.perfectClear;
+    title = 'PERFECT CLEAR!';
+  } else if(normalClear){
+    glyph = RESULT_GLYPHS.clear;
+    title = 'STAGE CLEAR!';
+  } else if(opt.canFailPass){
+    glyph = RESULT_GLYPHS.failPass;
+    title = 'STAGE FAILED...?';
+  } else {
+    glyph = RESULT_GLYPHS.fail;
+    title = 'STAGE FAILED';
+  }
+
+  var iconColor = isPassed ? opt.color : '#ff4466';
+
+  // 渲染icon：成功/跳过用左猫，失败用右猫
+  var iconEl = document.getElementById('resultIcon');
+  var glyphEl = document.getElementById('resultGlyph');
+  var catEl = document.getElementById('resultIconCat');
+  var ringEl = document.getElementById('resultRing');
+  iconEl.style.color = iconColor;
+  ringEl.style.borderColor = iconColor;
+  glyphEl.textContent = glyph;
+  glyphEl.style.color = iconColor;
+  glyphEl.style.textShadow = '0 0 16px ' + iconColor + ', 0 0 32px ' + iconColor + '80';
+  if(catEl){
+    catEl.classList.add('show');
+    catEl.style.backgroundPosition = isPassed ? '0 0' : '100% 0';
+    glyphEl.style.display = 'none';
+  } else {
+    glyphEl.style.display = '';
+  }
+
+  // title
+  var titleEl = document.getElementById('resultTitle');
+  titleEl.textContent = title;
+  titleEl.style.color = iconColor;
+  titleEl.style.textShadow = '0 0 12px ' + iconColor + ', 0 0 24px ' + iconColor + '80';
+
+  // stats
+  document.getElementById('resP').textContent = res.hits;
+  document.getElementById('resG').textContent = res.greats;
+  document.getElementById('resM').textContent = res.misses;
+  var acc = res.total > 0 ? (res.hits + res.greats) / res.total : 0;
+  document.getElementById('resBarFill').style.width = (acc * 100) + '%';
+  document.getElementById('resBarFill').style.background = 'linear-gradient(90deg, ' + opt.color + ', ' + opt.color + 'aa)';
+
+  // flavor
+  var flavor = '';
+  if(res.skipped) flavor = opt.skipFlavor;
+  else if(perfectClear || normalClear) flavor = opt.clearFlavor;
+  else if(opt.canFailPass) flavor = opt.failPassFlavor;
+  else flavor = opt.failFlavor;
+  var flavorEl = document.getElementById('resultFlavor');
+  flavorEl.textContent = '「' + flavor + '」';
+  flavorEl.style.color = isPassed ? opt.color : '#ff6688';
+  flavorEl.style.textShadow = isPassed ? ('0 0 10px ' + opt.color + '60') : 'none';
+  flavorEl.style.borderColor = isPassed ? (opt.color + '25') : 'rgba(255,66,102,.2)';
+
+  // spring comment
+  var spring = document.getElementById('resultSpring');
+  if(opt.canFailPass && !res.skipped && !normalClear){
+    spring.style.display = 'block';
+    spring.textContent = '春姬: "没通过反而更能证明你的困惑程度嘛~ 算你过✓"';
+  } else if(res.skipped){
+    spring.style.display = 'block';
+    spring.textContent = '春姬: "跳过本身就是答案嘛~ 算你过✓"';
+  } else if(!opt.canFailPass && !res.skipped && !normalClear){
+    spring.style.display = 'block';
+    spring.textContent = '春姬: "A和B不能翻车哦，重新来过吧~"';
+    spring.style.color = 'rgba(255,255,255,.5)';
+  } else {
+    spring.style.display = 'none';
+  }
+
+  // actions
+  var actions = document.getElementById('resultActions');
+  actions.innerHTML = '';
+
+  var btnRetry = document.createElement('button');
+  btnRetry.className = 'btn-retry';
+  btnRetry.textContent = isPassed ? '重新选择' : '返回选择';
+  btnRetry.onclick = function(){
+    phase = 'select'; selectedOption = null; gameResult = null;
+    showPhase('select');
+    updateSelectDoneState();
+    document.getElementById('headerHint').textContent = '选择最符合你感受的选项';
+  };
+  actions.appendChild(btnRetry);
+
+  if(!isPassed){
+    var btnAgain = document.createElement('button');
+    btnAgain.className = 'btn-again';
+    btnAgain.textContent = '[ 再来一次 ]';
+    btnAgain.style.borderColor = opt.color;
+    btnAgain.style.color = opt.color;
+    btnAgain.style.background = opt.color + '15';
+    btnAgain.style.boxShadow = '0 0 10px ' + opt.color + '40';
+    btnAgain.onclick = function(){ gameResult = null; startGame(opt); };
+    actions.appendChild(btnAgain);
+  }
+
+  if(isPassed){
+    var btnConfirm = document.createElement('button');
+    btnConfirm.className = 'btn-confirm';
+    btnConfirm.textContent = '确认选择';
+    btnConfirm.style.borderColor = opt.color;
+    btnConfirm.style.color = opt.color;
+    btnConfirm.style.background = opt.color + '20';
+    btnConfirm.style.boxShadow = '0 0 14px ' + opt.color + '50';
+    btnConfirm.onclick = function(){
+      completedKey = opt.key;
+      if(window.surveySetAnswer) window.surveySetAnswer('Q3', opt.key);
+      try{ localStorage.setItem('survey_q3', opt.key); }catch(e){}
+      window.location.href = '../Q4/survey_q4.html';
+    };
+    actions.appendChild(btnConfirm);
+  }
+}
+
+function startGame(option){
+  var sysBgm = document.getElementById('systemBgm');
+  if(sysBgm){ sysBgm.pause(); sysBgm.currentTime = 0; }
+  selectedOption = option;
+  phase = 'playing';
+  showPhase('playing');
+  var optLabel = document.getElementById('playingOptionLabel');
+  if(optLabel){
+    optLabel.textContent = option.key + ' — ' + option.text;
+    optLabel.style.color = option.color;
+    optLabel.style.textShadow = '0 0 16px ' + option.color + '99, 0 0 32px ' + option.color + '50';
+  }
+  document.getElementById('statsLv').textContent = 'LV.' + option.key;
+  document.getElementById('statsLv').style.color = option.color;
+  document.getElementById('gameProgressFill').style.background = 'linear-gradient(90deg, ' + option.color + ', ' + option.color + 'aa)';
+  document.getElementById('finishOverlay').style.display = 'none';
+  document.getElementById('skipBtn').style.display = option.canSkip ? 'block' : 'none';
+  var dpadWrap = document.getElementById('dpadWrap');
+  if(option.key === 'A'){ dpadWrap.classList.add('lv-a'); dpadWrap.classList.remove('lv-e'); } else if(option.key === 'E'){ dpadWrap.classList.remove('lv-a'); dpadWrap.classList.add('lv-e'); } else { dpadWrap.classList.remove('lv-a','lv-e'); }
+
+  hits = 0; greats = 0; misses = 0; combo = 0; finished = false;
+  notePositions = {}; judgments = [];
+  currentApproachTime = (option.key === 'E') ? 1100 : (option.key === 'D') ? 900 : APPROACH_TIME;
+  currentReceptorY = (option.key === 'E') ? 82 : 104;
+  var beatMs = 60000 / option.bpm;
+  var isA = option.key === 'A';
+  if(option.key === 'E'){
+    var bgmEl = document.getElementById('bgmE');
+    var durationMs = (bgmEl && bgmEl.duration && isFinite(bgmEl.duration)) ? Math.floor(bgmEl.duration * 1000) : 90000;
+    var genE = generateSequenceE(durationMs);
+    notes = genE.sequence.map(function(arrow, i){
+      return { id:i, arrow:arrow, lane:ARROW_TO_LANE[arrow], targetTime:genE.customTimes[i], state:'active', el:null };
+    });
+  } else if(option.key === 'D'){
+    var genD = generateSequenceD();
+    notes = genD.sequence.map(function(arrow, i){
+      return { id:i, arrow:arrow, lane:ARROW_TO_LANE[arrow], targetTime:genD.customTimes[i], state:'active', el:null };
+    });
+  } else {
+    notes = option.sequence.map(function(arrow, i){
+      var t = option.customTimes ? option.customTimes[i] : (1200 + i * beatMs);
+      return { id:i, arrow:arrow, lane:ARROW_TO_LANE[arrow], targetTime:t, state:'active', el:null };
+    });
+  }
+
+  renderReceptors(option);
+  var trackWrap = document.getElementById('trackWrap');
+  var lanesInner = trackWrap && trackWrap.querySelector('.lanes-inner');
+  if(option.key === 'E'){
+    if(trackWrap){ trackWrap.classList.remove('single-lane'); trackWrap.classList.add('eight-lane'); }
+    if(lanesInner){ while(lanesInner.children.length < 8){ var d = document.createElement('div'); d.className = 'lane'; lanesInner.appendChild(d); } }
+  } else {
+    if(trackWrap){ trackWrap.classList.remove('eight-lane','single-lane'); }
+    if(lanesInner){ while(lanesInner.children.length < 4){ var d = document.createElement('div'); d.className = 'lane'; lanesInner.appendChild(d); } while(lanesInner.children.length > 4) lanesInner.removeChild(lanesInner.lastChild); }
+  }
+  var mascotImg = document.getElementById('gameMascotImg');
+  if(mascotImg) mascotImg.src = (option.key === 'C' || option.key === 'D' || option.key === 'E') ? 'm2.GIF' : 'm1.GIF';
+  var trackMascotBg = document.getElementById('trackMascotBg');
+  if(trackMascotBg) trackMascotBg.style.backgroundImage = 'url(' + ((option.key === 'C' || option.key === 'D' || option.key === 'E') ? 'm2.GIF' : 'm1.GIF') + ')';
+  var container = document.getElementById('notesContainer');
+  container.innerHTML = '';
+  container.style.visibility = 'hidden';
+  var laneW = (option.key === 'E') ? 44 : 66;
+  notes.forEach(function(note){
+    var div = document.createElement('div');
+    div.className = 'note-arrow';
+    div.dataset.id = note.id;
+    div.style.left = (note.lane * laneW) + 'px';
+    div.style.borderColor = option.color;
+    div.style.background = option.color + '18';
+    div.style.boxShadow = '0 0 10px ' + option.color + '50';
+    div.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="' + option.color + '" stroke-width="2.5"><path d="' + ARROW_SVG[note.arrow] + '"/></svg>';
+    container.appendChild(div);
+    note.el = div;
+  });
+
+  updateStats();
+  var count = 3;
+  var overlay = document.getElementById('countdownOverlay');
+  var numEl = document.getElementById('countdownNum');
+  overlay.style.display = 'flex';
+  numEl.textContent = count;
+  numEl.className = 'num';
+  numEl.classList.remove('go');
+
+  function countTick(){
+    playCountdownBeep(count);
+    if(count === 0){
+      numEl.textContent = 'GO!';
+      numEl.classList.add('go');
+      overlay.style.display = 'none';
+      function startBgmAndLoop(){
+        container.style.visibility = 'visible';
+        gameStartTime = performance.now();
+        if(option.key === 'A'){
+          if(bgm) bgm.pause();
+          var bgmAEl = document.getElementById('bgmA');
+          if(bgmAEl){ bgmAEl.volume = 0.7; bgmAEl.currentTime = 0; bgmAEl.play().catch(function(){}); }
+        } else if(option.key === 'B'){
+          if(bgm) bgm.pause();
+          var bgmBEl = document.getElementById('bgmB');
+          if(bgmBEl){ bgmBEl.volume = 0.7; bgmBEl.currentTime = 0; bgmBEl.play().catch(function(){}); }
+        } else if(option.key === 'C'){
+          if(bgm) bgm.pause();
+          var bgmCEl = document.getElementById('bgmC');
+          if(bgmCEl){ bgmCEl.volume = 0.7; bgmCEl.currentTime = 0; bgmCEl.play().catch(function(){}); }
+        } else if(option.key === 'D'){
+          if(bgm) bgm.pause();
+          var bgmDEl = document.getElementById('bgmD');
+          if(bgmDEl){ bgmDEl.volume = 0.7; bgmDEl.currentTime = 0; bgmDEl.play().catch(function(){}); }
+        } else if(option.key === 'E'){
+          if(bgm) bgm.pause();
+          var bgmEEl = document.getElementById('bgmE');
+          if(bgmEEl){ bgmEEl.volume = 0.7; bgmEEl.currentTime = 0; bgmEEl.play().catch(function(){}); }
+        } else {
+          startBeatEngine(option.bpm);
+        }
+        rafId = requestAnimationFrame(gameLoop);
+      }
+      var readyEl = document.getElementById('readyGoAudio');
+      if(readyEl){
+        readyEl.volume = 1;
+        readyEl.currentTime = 0;
+        readyEl.onended = function(){
+          readyEl.onended = null;
+          startBgmAndLoop();
+        };
+        readyEl.play().catch(function(){ startBgmAndLoop(); });
+      } else {
+        startBgmAndLoop();
+      }
+      return;
+    }
+    numEl.textContent = count;
+    count--;
+    setTimeout(countTick, 700);
+  }
+  setTimeout(countTick, 400);
+}
+
+var pendingOption = null;
+var optionTipShown = {};
+var optionPlayed = {};
+var selectedPlayedOption = null;
+function showChoiceBar(opt){
+  selectedPlayedOption = opt;
+  var bar = document.getElementById('choiceBar');
+  if(!bar) return;
+  var again = document.getElementById('choiceBarAgain');
+  var confirm = document.getElementById('choiceBarConfirm');
+  if(again){ again.style.borderColor = opt.color; again.style.color = opt.color; again.style.background = opt.color + '18'; }
+  if(confirm){ confirm.style.borderColor = opt.color; confirm.style.color = opt.color; confirm.style.background = opt.color + '20'; }
+  bar.style.display = 'flex';
+}
+function hideChoiceBar(){
+  selectedPlayedOption = null;
+  var bar = document.getElementById('choiceBar');
+  if(bar) bar.style.display = 'none';
+}
+var EGG_CONFIGS = {
+  A: { optionLabel: 'LV.A · 一指封神', optionColor: '#00ffff', message: '已被系统截获，正在启动 [h]「指尖零压检定」[/h]\n不愧是天选驾驶员，轻松拿捏所有操作～', btnText: '进入检定', statusText: 'CONFIDENCE_LV: MAX' },
+  B: { optionLabel: 'LV.B · 单手通杀', optionColor: '#00ff88',  message: '已被系统截获，正在启动 [h]「单手协调检定」[/h]\n一只手通背包，你就是救世军王牌干员', btnText: '进入检定', statusText: 'CONFIDENCE_LV: HIGH' },
+  C: { optionLabel: 'LV.C · 凡人之手', optionColor: '#ffff00',  message: '已被系统截获，正在启动 [h]「指尖抗压检定」[/h]\n普通打工人标配，没疯也没超神，摸鱼刚好', btnText: '进入检定', statusText: 'CONFIDENCE_LV: MID' },
+  D: { optionLabel: 'LV.D · 借手凑数', optionColor: '#ff8800',  message: '已被系统截获，正在启动 [h]「混乱协调极限检定」[/h]\n第三只手还没借到？先薅旁边古生物的爪子凑合用！', btnText: '勉强进入', statusText: 'CONFIDENCE_LV: LOW' },
+  E: { optionLabel: 'LV.E · 人脚合体', optionColor: '#ff0044', message: '已被系统截获，正在启动 [h]「地狱压力检定」[/h]\n亲亲...建议先给脚趾装神经接口呢～', btnText: '⚠ 硬着头皮进', statusText: 'CONFIDENCE_LV: NONE' }
+};
+function showEggModal(key, onConfirm){
+  optionTipShown[key] = true;
+  var cfg = EGG_CONFIGS[key] || EGG_CONFIGS['C'];
+  var bgm = document.getElementById('bgm');
+  if(bgm) bgm.pause();
+  var sysBgm = document.getElementById('systemBgm');
+  if(sysBgm){ sysBgm.volume = 0.7; sysBgm.currentTime = 0; sysBgm.play().catch(function(){}); }
+  if(key === 'E'){
+    var bgmE = document.getElementById('bgmE');
+    if(bgmE && bgmE.readyState < 2) bgmE.load();
+  }
+  var backdrop = document.createElement('div');
+  backdrop.className = 'modal-backdrop';
+  backdrop.innerHTML = '<div class="egg-modal glitch-enter" id="eggModal" style="--opt-color:' + cfg.optionColor + '">' +
+    '<div class="corner-br"></div><div class="corner-bl"></div><div class="scan-beam"></div>' +
+    '<div class="sys-header"><div class="ping"></div><span class="label">SYS // INTERCEPT_CONFIRMED</span></div>' +
+    '<div class="msg-wrap"><div class="msg-ding" id="modalDing">' + (cfg.ding || '叮——！') + '</div><div class="msg-text" id="modalText"><span class="cursor"></span></div>' +
+    '<div class="option-tag" id="modalTag" style="color:' + cfg.optionColor + ';border-color:' + cfg.optionColor + '40"><span class="dot" style="background:' + cfg.optionColor + '"></span>' + cfg.optionLabel + '</div></div>' +
+    '<div class="status-bar"><span><span class="status-dot"></span>' + cfg.statusText + '</span><span>LAUNCH_IN_4S</span></div></div>';
+  document.body.appendChild(backdrop);
+  playModalDing();
+  var rawMsg = cfg.message.replace(/\[h\](.*?)\[\/h\]/g, '\x01$1\x02').replace(/\n/g, '\n');
+  var textEl = document.getElementById('modalText');
+  var chars = [];
+  var inHighlight = false;
+  for(var i = 0; i < rawMsg.length; i++){
+    var c = rawMsg[i];
+    if(c === '\x01'){ inHighlight = true; continue; }
+    if(c === '\x02'){ inHighlight = false; continue; }
+    chars.push({ char: c, highlight: inHighlight });
+  }
+  var displayed = [];
+  var charIdx = 0;
+  var typeDelay = 82;
+  function typeNext(){
+    if(charIdx >= chars.length) return;
+    var item = chars[charIdx++];
+    if(item.char !== '\n') playTypeTick();
+    displayed.push(item);
+    var html = '';
+    var inH = false;
+    displayed.forEach(function(d){
+      if(d.char === '\n'){ if(inH){ html += '</span>'; inH = false; } html += '<br>'; return; }
+      if(d.highlight && !inH){ html += '<span class="highlight">'; inH = true; }
+      if(!d.highlight && inH){ html += '</span>'; inH = false; }
+      html += (d.char === '<' ? '&lt;' : d.char === '&' ? '&amp;' : d.char);
+    });
+    if(inH) html += '</span>';
+    html += '<span class="cursor"></span>';
+    textEl.innerHTML = html;
+    var delay = item.char === '…' ? typeDelay * 3 : (item.char === '，' || item.char === '。' || item.char === '～' ? typeDelay * 2.5 : typeDelay);
+    setTimeout(typeNext, delay);
+  }
+  setTimeout(typeNext, 520);
+  setTimeout(function(){
+    backdrop.style.animation = 'backdropIn .2s ease reverse forwards';
+    var modal = document.getElementById('eggModal');
+    if(modal) modal.style.animation = 'eggModalIn .2s ease reverse forwards';
+    setTimeout(function(){ backdrop.remove(); if(onConfirm) onConfirm(); }, 200);
+  }, 5500);
+}
+document.getElementById('phaseSelect').querySelectorAll('.opt-btn').forEach(function(btn){
+  btn.addEventListener('click', function(){
+    var key = this.dataset.key;
+    var opt = OPTIONS.find(function(o){ return o.key === key; });
+    if(!opt) return;
+    if(optionPlayed[key]){
+      showChoiceBar(opt);
+    } else if(!optionTipShown[key]){
+      hideChoiceBar();
+      pendingOption = opt;
+      showEggModal(opt.key, function(){ if(pendingOption){ startGame(pendingOption); pendingOption = null; } });
+    } else {
+      hideChoiceBar();
+      startGame(opt);
+    }
+  });
+});
+
+document.getElementById('choiceBarAgain').addEventListener('click', function(){
+  if(selectedPlayedOption){ startGame(selectedPlayedOption); hideChoiceBar(); }
+});
+document.getElementById('choiceBarConfirm').addEventListener('click', function(){
+  if(!selectedPlayedOption) return;
+  var opt = selectedPlayedOption;
+  completedKey = opt.key;
+  if(window.surveySetAnswer) window.surveySetAnswer('Q3', opt.key);
+  try{ localStorage.setItem('survey_q3', opt.key); }catch(e){}
+  window.location.href = '../Q4/survey_q4.html';
+});
+
+function updateSelectDoneState(){
+  document.querySelectorAll('.opt-btn').forEach(function(b){
+    var k = b.dataset.key;
+    b.classList.toggle('done', k === completedKey);
+    b.querySelector('.opt-done').style.display = k === completedKey ? 'inline' : 'none';
+  });
+}
+
+document.getElementById('backBtn').addEventListener('click', function(){
+  if(phase !== 'playing') return;
+  stopGameTrackBgm();
+  finished = true;
+  stopBeatEngine();
+  if(rafId) cancelAnimationFrame(rafId);
+  phase = 'select'; selectedOption = null;
+  showPhase('select');
+  hideChoiceBar();
+  document.getElementById('headerHint').textContent = '选择最符合你感受的选项';
+  updateSelectDoneState();
+});
+
+document.getElementById('skipBtn').addEventListener('click', function(){
+  if(!selectedOption || !selectedOption.canSkip || finished) return;
+  stopGameTrackBgm();
+  if(selectedOption) optionPlayed[selectedOption.key] = true;
+  finished = true;
+  stopBeatEngine();
+  if(rafId) cancelAnimationFrame(rafId);
+  phase = 'result';
+  gameResult = { completed:false, hits:hits, greats:greats, misses:misses, total:notes.length, skipped:true };
+  showPhase('result');
+  renderResult();
+});
+
+(function(){
+  var lastTouchTime = 0;
+  document.getElementById('dpadWrap').querySelectorAll('.btn').forEach(function(btn){
+    var arrow = btn.dataset.arrow;
+    function trigger(){ handleArrowInput(arrow); }
+    btn.addEventListener('touchstart', function(e){
+      e.preventDefault();
+      lastTouchTime = Date.now();
+      trigger();
+    }, { passive: false });
+    btn.addEventListener('click', function(e){
+      if(Date.now() - lastTouchTime < 500) return;
+      trigger();
+    });
+  });
+})();
+
+window.addEventListener('keydown', function(e){
+  if(e.repeat) return;
+  var arrow = ARROW_KEYS[e.key];
+  if(arrow){ e.preventDefault(); handleArrowInput(arrow); }
+});
+
+var bgm = document.getElementById('bgm');
+if(bgm) bgm.volume = 0.7;
+function startBgm(){
+  if(!bgm) return;
+  var p = bgm.play();
+  if(p && typeof p.then === 'function') p.catch(function(){});
+}
+startBgm();
+function onIntroInteraction(){
+  startBgm();
+  var h = document.getElementById('introBgmHint');
+  if(h) h.classList.add('bgm-on');
+  document.getElementById('introOverlay').removeEventListener('click', onIntroInteraction);
+  document.getElementById('introOverlay').removeEventListener('touchstart', onIntroInteraction);
+}
+document.getElementById('introOverlay').addEventListener('click', onIntroInteraction);
+document.getElementById('introOverlay').addEventListener('touchstart', onIntroInteraction, { passive: true });
+document.getElementById('introBtn').addEventListener('click', function(){
+  startBgm();
+  document.getElementById('introOverlay').classList.add('hidden');
+  document.getElementById('q3Main').classList.add('visible');
+});
+updateSelectDoneState();
+})();
+</script>
+</body>
+</html>

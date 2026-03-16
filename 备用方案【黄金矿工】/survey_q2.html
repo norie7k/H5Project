@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Q2 猫咪鱼缸宝藏 · 殖装适应性体检</title>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --cyan: #00ffff;
+      --magenta: #ff00ff;
+      --yellow: #ffff00;
+      --green: #00ff88;
+      --orange: #ff8800;
+      --red: #ff0044;
+      --bg: #030810;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: #e0f0ff;
+      font-family: 'Noto Sans SC', sans-serif;
+      overflow-x: hidden;
+    }
+    body { display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+
+    #scanline {
+      position: fixed; inset: 0; pointer-events: none; z-index: 9000;
+      background: repeating-linear-gradient(0deg, transparent 0, transparent 2px, rgba(0,0,0,.08) 2px, rgba(0,0,0,.08) 3px);
+    }
+
+    .q2-page {
+      position: relative; z-index: 10;
+      min-height: 100vh;
+      width: 100%;
+      max-width: 512px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 16px 16px 40px;
+      overflow: hidden;
+    }
+
+    .q2-grid-bg {
+      position: absolute; inset: 0; opacity: .05; pointer-events: none;
+      background-image: linear-gradient(#00ffff 1px, transparent 1px), linear-gradient(90deg, #00ffff 1px, transparent 1px);
+      background-size: 40px 40px;
+    }
+
+    .q2-content { position: relative; z-index: 1; width: 100%; }
+
+    /* CyberProgressBar: 2/5 */
+    .cyber-progress {
+      margin-bottom: 16px;
+    }
+    .cyber-progress-label {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 6px;
+      color: rgba(0,255,255,.5);
+      letter-spacing: .1em;
+      margin-bottom: 6px;
+      display: flex;
+      justify-content: space-between;
+    }
+    .cyber-progress-track {
+      height: 4px;
+      background: rgba(0,255,255,.08);
+      overflow: hidden;
+    }
+    .cyber-progress-fill {
+      height: 100%;
+      width: 40%;
+      background: linear-gradient(90deg, var(--cyan), var(--magenta));
+      box-shadow: 0 0 10px rgba(0,255,255,.4);
+      transition: width .4s ease;
+    }
+
+    .q2-header {
+      margin-bottom: 16px;
+      animation: fadeSlide .4s ease forwards;
+    }
+    @keyframes fadeSlide {
+      from { opacity: 0; transform: translateX(-20px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+    .q2-tag {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 8px;
+      color: #d946ef;
+      margin-bottom: 8px;
+    }
+    .q2-title {
+      font-size: 18px;
+      color: rgba(34,211,238,.95);
+      margin-bottom: 4px;
+      font-family: 'Noto Sans SC', sans-serif;
+    }
+    .q2-hint {
+      font-family: monospace;
+      font-size: 12px;
+      color: rgba(250,204,21,.7);
+    }
+
+    /* Fish tank */
+    .tank {
+      position: relative;
+      width: 100%;
+      height: 208px;
+      margin-bottom: 16px;
+      cursor: crosshair;
+      overflow: hidden;
+      background: linear-gradient(180deg, #0a1628 0%, #0d2847 40%, #0a3a5c 100%);
+      border: 2px solid rgba(0,255,255,.3);
+      box-shadow: inset 0 0 30px rgba(0,255,255,.05), 0 0 20px rgba(0,255,255,.1);
+      animation: tankIn .5s .2s both;
+    }
+    @media (min-width: 768px) { .tank { height: 256px; } }
+    @keyframes tankIn {
+      from { opacity: 0; transform: scale(.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    .bubble {
+      position: absolute;
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: rgba(34,211,238,.2);
+      border: 1px solid rgba(34,211,238,.1);
+      pointer-events: none;
+    }
+    .bubble:nth-child(1) { left: 15%; animation: bubbleUp 4s 0s infinite; }
+    .bubble:nth-child(2) { left: 35%; animation: bubbleUp 5s .5s infinite; }
+    .bubble:nth-child(3) { left: 55%; animation: bubbleUp 3.5s 1s infinite; }
+    .bubble:nth-child(4) { left: 70%; animation: bubbleUp 4.5s .2s infinite; }
+    .bubble:nth-child(5) { left: 85%; animation: bubbleUp 3s 1.5s infinite; }
+    .bubble:nth-child(6) { left: 25%; animation: bubbleUp 4.2s .8s infinite; }
+    .bubble:nth-child(7) { left: 60%; animation: bubbleUp 3.8s .3s infinite; }
+    .bubble:nth-child(8) { left: 45%; animation: bubbleUp 5.2s 1.2s infinite; }
+    @keyframes bubbleUp {
+      0% { transform: translateY(100%) scale(.5); opacity: 0; }
+      20% { opacity: .5; }
+      100% { transform: translateY(-120%) scale(1); opacity: 0; }
+    }
+
+    .seaweed {
+      position: absolute;
+      bottom: 0;
+      width: 3px;
+      background: rgba(34,197,94,.3);
+      border-radius: 2px;
+      pointer-events: none;
+    }
+    .seaweed:nth-child(1) { left: 20%; height: 28%; animation: sway 2.5s ease-in-out infinite; }
+    .seaweed:nth-child(2) { left: 45%; height: 35%; animation: sway 3s ease-in-out infinite; }
+    .seaweed:nth-child(3) { left: 70%; height: 22%; animation: sway 2.2s ease-in-out infinite; }
+    .seaweed:nth-child(4) { left: 85%; height: 32%; animation: sway 2.8s ease-in-out infinite; }
+    @keyframes sway {
+      0%, 100% { transform: skewX(-5deg); }
+      50% { transform: skewX(5deg); }
+    }
+
+    .fish {
+      position: absolute;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      z-index: 2;
+    }
+    .fish.caught { z-index: 10; animation: fishCaught .5s ease forwards; }
+    @keyframes fishCaught {
+      0% { transform: translate(-50%, -50%) scale(1) rotate(0deg); }
+      50% { transform: translate(-50%, -50%) scale(1.5) rotate(180deg); }
+      100% { transform: translate(-50%, -50%) scale(1) rotate(360deg); }
+    }
+    .fish-emoji {
+      font-size: 24px;
+      line-height: 1;
+    }
+    .fish-label {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 7px;
+      margin-top: 2px;
+      padding: 1px 4px;
+      border-radius: 2px;
+      background: rgba(0,0,0,.6);
+    }
+
+    /* 矿工猫：鱼缸顶部居中 */
+    .tank-miner {
+      position: absolute;
+      left: 50%;
+      top: 0;
+      transform: translate(-50%, -30%);
+      width: auto;
+      max-height: 72px;
+      height: auto;
+      pointer-events: none;
+      z-index: 4;
+      filter: drop-shadow(0 2px 8px rgba(0,255,255,.25));
+    }
+
+    .cat-paw {
+      position: absolute;
+      top: -8px;
+      font-size: 28px;
+      transform: translateX(-50%);
+      pointer-events: none;
+      z-index: 5;
+      animation: pawBounce .3s ease;
+    }
+    @keyframes pawBounce {
+      0%, 100% { transform: translateX(-50%) translateY(0); }
+      50% { transform: translateX(-50%) translateY(10px); }
+    }
+
+    .tank-label {
+      position: absolute;
+      bottom: 4px;
+      right: 8px;
+      font-family: 'Press Start 2P', monospace;
+      font-size: 6px;
+      color: rgba(0,255,255,.3);
+    }
+
+    /* Direct options */
+    .q2-options {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .q2-opt {
+      width: 100%;
+      text-align: left;
+      padding: 10px 12px;
+      border: 1px solid rgba(75,85,99,.4);
+      background: rgba(17,24,39,.3);
+      color: #d1d5db;
+      font-size: 12px;
+      font-family: 'Noto Sans SC', sans-serif;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      transition: border-color .3s, background .3s;
+      animation: fadeSlide .4s both;
+    }
+    .q2-opt:hover {
+      border-color: rgba(75,85,99,.6);
+      background: rgba(17,24,39,.5);
+    }
+    .q2-opt.selected {
+      border-color: rgba(34,211,238,.6);
+      background: rgba(34,211,238,.1);
+    }
+    .q2-opt .opt-bar {
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 2px;
+    }
+    .q2-opt .opt-inner {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding-left: 8px;
+    }
+    .q2-opt .opt-key {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 8px;
+      flex-shrink: 0;
+    }
+
+    .q2-opt:nth-child(1) { animation-delay: .4s; }
+    .q2-opt:nth-child(2) { animation-delay: .48s; }
+    .q2-opt:nth-child(3) { animation-delay: .56s; }
+    .q2-opt:nth-child(4) { animation-delay: .64s; }
+    .q2-opt:nth-child(5) { animation-delay: .72s; }
+
+    /* Confirm block */
+    .confirm-block {
+      margin-top: 24px;
+      text-align: center;
+      animation: confirmIn .3s ease forwards;
+    }
+    @keyframes confirmIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .confirm-msg {
+      font-family: monospace;
+      font-size: 12px;
+      color: #4ade80;
+      margin-bottom: 12px;
+    }
+    .confirm-btn {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 10px;
+      padding: 12px 24px;
+      background: rgba(34,211,238,.2);
+      border: 1px solid rgba(34,211,238,.6);
+      color: rgba(34,211,238,.9);
+      cursor: pointer;
+      transition: background .2s, transform .1s;
+    }
+    .confirm-btn:hover {
+      background: rgba(34,211,238,.3);
+    }
+    .confirm-btn:active {
+      transform: scale(.98);
+    }
+    .confirm-block.hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="scanline"></div>
+  <div class="q2-page">
+    <div class="q2-grid-bg"></div>
+    <div class="q2-content">
+      <div class="cyber-progress">
+        <div class="cyber-progress-label">
+          <span>QUESTION</span>
+          <span>02 / 05</span>
+        </div>
+        <div class="cyber-progress-track">
+          <div class="cyber-progress-fill" id="progress-fill"></div>
+        </div>
+      </div>
+
+      <div class="q2-header">
+        <div class="q2-tag">QUESTION_02 // 猫咪鱼缸宝藏</div>
+        <h2 class="q2-title">对【猫咪鱼缸宝藏】的感受</h2>
+        <p class="q2-hint">&gt; 点击鱼缸抓鱼选择答案 🐱 或直接点选下方选项</p>
+      </div>
+
+      <div class="tank" id="tank">
+        <img src="./cat_miner.png" alt="矿工猫" class="tank-miner" />
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="seaweed"></div>
+        <div class="seaweed"></div>
+        <div class="seaweed"></div>
+        <div class="seaweed"></div>
+        <div id="fish-container"></div>
+        <div class="cat-paw" id="cat-paw" style="left: 50%; display: none;">🐱</div>
+        <div class="tank-label">CYBER_AQUARIUM_v2.0</div>
+      </div>
+
+      <div class="q2-options" id="options">
+        <button type="button" class="q2-opt" data-index="0">
+          <span class="opt-bar" style="background: #00ffff"></span>
+          <div class="opt-inner">
+            <span class="opt-key" style="color: #00ffff">A</span>
+            <span>完美体验，我们不说YYDS，我们说"无可挑剔"</span>
+          </div>
+        </button>
+        <button type="button" class="q2-opt" data-index="1">
+          <span class="opt-bar" style="background: #00ff88"></span>
+          <div class="opt-inner">
+            <span class="opt-key" style="color: #00ff88">B</span>
+            <span>体验良好，我们不说针不戳，我们说"略有瑕疵"</span>
+          </div>
+        </button>
+        <button type="button" class="q2-opt" data-index="2">
+          <span class="opt-bar" style="background: #ffff00"></span>
+          <div class="opt-inner">
+            <span class="opt-key" style="color: #ffff00">C</span>
+            <span>中规中矩，我们不说就这水平，我们说"平平淡淡"</span>
+          </div>
+        </button>
+        <button type="button" class="q2-opt" data-index="3">
+          <span class="opt-bar" style="background: #ff8800"></span>
+          <div class="opt-inner">
+            <span class="opt-key" style="color: #ff8800">D</span>
+            <span>体验较差，我们不说蚌埠住了，我们说"差强人意"</span>
+          </div>
+        </button>
+        <button type="button" class="q2-opt" data-index="4">
+          <span class="opt-bar" style="background: #ff0044"></span>
+          <div class="opt-inner">
+            <span class="opt-key" style="color: #ff0044">E</span>
+            <span>体验很差，我们不说真下头，我们说"令人作呕"</span>
+          </div>
+        </button>
+      </div>
+
+      <div class="confirm-block hidden" id="confirm-block">
+        <div class="confirm-msg" id="confirm-msg">✓ 已捕获: A - 完美体验...</div>
+        <button type="button" class="confirm-btn" id="confirm-btn">[ 确认传输 → ]</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const options = [
+        { key: 'A', text: '完美体验，我们不说YYDS，我们说"无可挑剔"', color: '#00ffff' },
+        { key: 'B', text: '体验良好，我们不说针不戳，我们说"略有瑕疵"', color: '#00ff88' },
+        { key: 'C', text: '中规中矩，我们不说就这水平，我们说"平平淡淡"', color: '#ffff00' },
+        { key: 'D', text: '体验较差，我们不说蚌埠住了，我们说"差强人意"', color: '#ff8800' },
+        { key: 'E', text: '体验很差，我们不说真下头，我们说"令人作呕"', color: '#ff0044' },
+      ];
+
+      let fish = [];
+      let caughtFish = null;
+      let catX = 50;
+      let animId = null;
+
+      const tank = document.getElementById('tank');
+      const fishContainer = document.getElementById('fish-container');
+      const catPaw = document.getElementById('cat-paw');
+      const confirmBlock = document.getElementById('confirm-block');
+      const confirmMsg = document.getElementById('confirm-msg');
+      const confirmBtn = document.getElementById('confirm-btn');
+      const optionBtns = document.querySelectorAll('.q2-opt');
+
+      function initFish() {
+        fish = options.map(function (opt, i) {
+          return {
+            id: i,
+            x: 10 + Math.random() * 80,
+            y: 15 + Math.random() * 60,
+            dx: (Math.random() - 0.5) * 0.8,
+            dy: (Math.random() - 0.5) * 0.4,
+            color: opt.color,
+            optionIndex: i,
+            caught: false,
+          };
+        });
+        renderFish();
+      }
+
+      function renderFish() {
+        fishContainer.innerHTML = '';
+        fish.forEach(function (f) {
+          var el = document.createElement('div');
+          el.className = 'fish' + (f.caught ? ' caught' : '');
+          el.setAttribute('data-id', f.id);
+          el.style.left = f.x + '%';
+          el.style.top = f.y + '%';
+          el.style.filter = 'drop-shadow(0 0 4px ' + f.color + ')';
+          if (!f.caught) el.style.transform = 'translate(-50%, -50%)' + (f.dx < 0 ? ' scaleX(-1)' : '');
+          el.innerHTML =
+            '<div class="fish-emoji">🐟</div>' +
+            '<div class="fish-label" style="color:' + f.color + '">' + options[f.optionIndex].key + '</div>';
+          fishContainer.appendChild(el);
+        });
+      }
+
+      function animate() {
+        fish = fish.map(function (f) {
+          if (f.caught) return f;
+          var nx = f.x + f.dx;
+          var ny = f.y + f.dy;
+          var ndx = f.dx;
+          var ndy = f.dy;
+          if (nx < 5 || nx > 90) ndx = -ndx;
+          if (ny < 10 || ny > 80) ndy = -ndy;
+          if (Math.random() < 0.02) ndx += (Math.random() - 0.5) * 0.3;
+          if (Math.random() < 0.02) ndy += (Math.random() - 0.5) * 0.2;
+          return { id: f.id, x: nx, y: ny, dx: ndx, dy: ndy, color: f.color, optionIndex: f.optionIndex, caught: f.caught };
+        });
+        renderFish();
+        animId = requestAnimationFrame(animate);
+      }
+
+      function selectOption(index) {
+        if (caughtFish !== null) return;
+        caughtFish = index;
+        fish = fish.map(function (f) {
+          if (f.optionIndex === index) return { id: f.id, x: f.x, y: f.y, dx: 0, dy: 0, color: f.color, optionIndex: f.optionIndex, caught: true };
+          return f;
+        });
+        renderFish();
+        optionBtns.forEach(function (btn, i) {
+          btn.classList.toggle('selected', i === index);
+        });
+        confirmMsg.textContent = '✓ 已捕获: ' + options[index].key + ' - ' + options[index].text.slice(0, 15) + '...';
+        confirmBlock.classList.remove('hidden');
+      }
+
+      function handleTankClick(e) {
+        if (caughtFish !== null) return;
+        var rect = tank.getBoundingClientRect();
+        var clickX = ((e.clientX - rect.left) / rect.width) * 100;
+        var clickY = ((e.clientY - rect.top) / rect.height) * 100;
+        catX = clickX;
+        catPaw.style.left = clickX + '%';
+        catPaw.style.display = 'block';
+        catPaw.style.animation = 'none';
+        catPaw.offsetHeight;
+        catPaw.style.animation = 'pawBounce .3s ease';
+
+        var catchRadius = 12;
+        var caught = null;
+        for (var i = 0; i < fish.length; i++) {
+          if (fish[i].caught) continue;
+          if (Math.abs(fish[i].x - clickX) < catchRadius && Math.abs(fish[i].y - clickY) < catchRadius) {
+            caught = fish[i];
+            break;
+          }
+        }
+        if (caught) {
+          fish = fish.map(function (f) {
+            if (f.id === caught.id) return { id: f.id, x: clickX, y: clickY, dx: 0, dy: 0, color: f.color, optionIndex: f.optionIndex, caught: true };
+            return f;
+          });
+          renderFish();
+          selectOption(caught.optionIndex);
+        }
+      }
+
+      function onConfirm() {
+        if (caughtFish === null) return;
+        var key = options[caughtFish].key;
+        if (typeof window.onQ2Answer === 'function') {
+          window.onQ2Answer(key);
+        } else {
+          alert('已选择: ' + key + ' — ' + options[caughtFish].text);
+        }
+      }
+
+      tank.addEventListener('click', handleTankClick);
+      optionBtns.forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          selectOption(parseInt(btn.getAttribute('data-index'), 10));
+        });
+      });
+      confirmBtn.addEventListener('click', onConfirm);
+
+      initFish();
+      animate();
+    })();
+  </script>
+</body>
+</html>

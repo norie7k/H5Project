@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Figma 钓鱼游戏 · HTML 版</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; overflow: hidden; touch-action: none; -webkit-tap-highlight-color: transparent; }
+    body {
+      background: linear-gradient(to bottom, #87CEEB, #B0D8F0, #4A90D9);
+      font-family: sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      user-select: none;
+    }
+    #wrap {
+      width: 100%;
+      max-width: 480px;
+      height: 100vh;
+      max-height: 720px;
+      position: relative;
+      overflow: hidden;
+    }
+    #game {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div id="wrap">
+    <canvas id="game"></canvas>
+  </div>
+  <script>
+(function() {
+  // 猫 + 选项 A–E 五条鱼（独立图片）
+  var CAT_IMG = 'cat_miner.png';
+  var FISH_IMGS = ['fish_a.png', 'fish_b.png', 'fish_c.png', 'fish_d.png', 'fish_e.png'];
+
+  var FISH_COUNT = 5;
+  var FISH_SCORES = [100, 60, 30, 20, -50];
+  var FISH_NAMES = ['A 无可挑剔', 'B 略有瑕疵', 'C 平平淡淡', 'D 差强人意', 'E 令人作呕'];
+  var FISH_SPEEDS = [2.5, 2, 1.2, 1.5, 1.8];
+  var CHAIN_INIT = 40;
+  var EXTEND_SPEED = 6;
+  var RETRACT_SPEED = 5;
+  var RETRACT_SPEED_FISH = RETRACT_SPEED * 0.6;
+  var SWING_AMPLITUDE = 1.2;
+  var SWING_STEP = 0.02;
+  var CATCH_EFFECT_FRAMES = 60;
+
+  var canvas = document.getElementById('game');
+  var ctx = canvas.getContext('2d');
+
+  var state = {
+    gameState: 'swinging',
+    angle: 0,
+    angleDir: 1,
+    chainLength: CHAIN_INIT,
+    maxChainLength: 0,
+    pivotX: 0,
+    pivotY: 100,
+    fish: [],
+    score: 0,
+    caughtFish: null,
+    catImage: null,
+    fishImages: [],
+    imagesLoaded: false,
+    showCatchEffect: false,
+    catchEffectTimer: 0,
+    catchEffectText: ''
+  };
+
+  function initFish(canvasW, canvasH, pivotY) {
+    var tankTop = pivotY + 60;
+    var tankBottom = canvasH - 30;
+    var tankHeight = tankBottom - tankTop;
+    var fish = [];
+    for (var i = 0; i < FISH_COUNT; i++) {
+      var fw = 70 + Math.random() * 30;
+      var fh = fw * 0.65;
+      fish.push({
+        id: i,
+        type: i,
+        x: Math.random() * (canvasW - fw * 2) + fw,
+        y: tankTop + tankHeight * 0.15 + Math.random() * (tankHeight * 0.65),
+        speed: FISH_SPEEDS[i] * (0.8 + Math.random() * 0.4),
+        direction: Math.random() > 0.5 ? 1 : -1,
+        width: fw,
+        height: fh,
+        caught: false,
+        score: FISH_SCORES[i],
+        name: FISH_NAMES[i]
+      });
+    }
+    return fish;
+  }
+
+  function drawChainLinks(startX, startY, endX, endY) {
+    var dx = endX - startX;
+    var dy = endY - startY;
+    var dist = Math.sqrt(dx * dx + dy * dy);
+    var linkSpacing = 12;
+    var numLinks = Math.floor(dist / linkSpacing);
+    ctx.strokeStyle = '#C8A84E';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(startX, startY);
+    ctx.lineTo(endX, endY);
+    ctx.stroke();
+    for (var i = 0; i <= numLinks; i++) {
+      var t = numLinks > 0 ? i / numLinks : 0;
+      var cx = startX + dx * t;
+      var cy = startY + dy * t;
+      ctx.fillStyle = i % 2 === 0 ? '#DAA520' : '#B8860B';
+      ctx.beginPath();
+      ctx.arc(cx, cy, 3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  function drawClaw(x, y, hasFish) {
+    ctx.save();
+    ctx.translate(x, y);
+    var clawAngle = hasFish ? 0.15 : 0.4;
+    var clawLen = 18;
+    ctx.save();
+    ctx.rotate(-clawAngle);
+    ctx.strokeStyle = '#B8860B';
+    ctx.lineWidth = 4;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(-8, clawLen);
+    ctx.stroke();
+    ctx.fillStyle = '#DAA520';
+    ctx.beginPath();
+    ctx.arc(-8, clawLen, 4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+    ctx.save();
+    ctx.rotate(clawAngle);
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(8, clawLen);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(8, clawLen, 4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+    ctx.fillStyle = '#DAA520';
+    ctx.beginPath();
+    ctx.arc(0, 0, 6, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#8B6914';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawFish(fish, img) {
+    if (!img) return;
+    ctx.save();
+    ctx.translate(fish.x, fish.y);
+    if (fish.direction < 0) ctx.scale(-1, 1);
+    ctx.drawImage(img, -fish.width / 2, -fish.height / 2, fish.width, fish.height);
+    ctx.restore();
+  }
+
+  function resize() {
+    var dpr = window.devicePixelRatio || 1;
+    var rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    state.pivotX = rect.width / 2;
+    state.pivotY = 100;
+    state.maxChainLength = rect.height - 40;
+    if (state.fish.length === 0) {
+      state.fish = initFish(rect.width, rect.height, state.pivotY);
+    }
+  }
+
+  var loadCount = 0;
+  function checkReady() {
+    loadCount++;
+    if (loadCount >= 1 + FISH_IMGS.length) {
+      state.imagesLoaded = true;
+      resize();
+      gameLoop();
+    }
+  }
+
+  var catImage = new Image();
+  catImage.src = CAT_IMG;
+  catImage.onload = function() { state.catImage = catImage; checkReady(); };
+  catImage.onerror = function() { state.catImage = null; checkReady(); };
+
+  state.fishImages = [];
+  for (var i = 0; i < FISH_IMGS.length; i++) {
+    (function(idx) {
+      var img = new Image();
+      img.src = FISH_IMGS[idx];
+      img.onload = function() { state.fishImages[idx] = img; checkReady(); };
+      img.onerror = function() { state.fishImages[idx] = null; checkReady(); };
+    })(i);
+  }
+
+  function gameLoop() {
+    if (!state.imagesLoaded) return;
+    var gs = state;
+    var rect = canvas.getBoundingClientRect();
+    var w = rect.width;
+    var h = rect.height;
+    var waterTop = gs.pivotY + 50;
+
+    ctx.clearRect(0, 0, w, h);
+
+    var gradient = ctx.createLinearGradient(0, waterTop, 0, h);
+    gradient.addColorStop(0, 'rgba(64, 164, 223, 0.3)');
+    gradient.addColorStop(0.5, 'rgba(30, 120, 200, 0.5)');
+    gradient.addColorStop(1, 'rgba(10, 60, 120, 0.7)');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, waterTop, w, h - waterTop);
+
+    ctx.strokeStyle = 'rgba(100, 200, 255, 0.6)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(0, waterTop);
+    for (var x = 0; x < w; x += 5) {
+      ctx.lineTo(x, waterTop + Math.sin(x * 0.03 + Date.now() * 0.002) * 3);
+    }
+    ctx.stroke();
+
+    var time = Date.now() * 0.001;
+    for (var i = 0; i < 12; i++) {
+      var bx = (i * 73 + Math.sin(time + i) * 20) % w;
+      var by = h - ((time * 30 + i * 67) % (h - waterTop));
+      var br = 2 + (i % 3) * 1.5;
+      ctx.fillStyle = 'rgba(180, 220, 255, 0.3)';
+      ctx.beginPath();
+      ctx.arc(bx, by + waterTop, br, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    gs.fish.forEach(function(f) {
+      if (f.caught) return;
+      f.x += f.speed * f.direction;
+      f.y += Math.sin(Date.now() * 0.003 + f.id * 2) * 0.3;
+      if (f.x < f.width / 2 + 10) f.direction = 1;
+      else if (f.x > w - f.width / 2 - 10) f.direction = -1;
+      if (f.y < waterTop + 30) f.y = waterTop + 30;
+      if (f.y > h - 40) f.y = h - 40;
+    });
+
+    gs.fish.forEach(function(f) {
+      if (f.caught) return;
+      if (gs.fishImages[f.type]) drawFish(f, gs.fishImages[f.type]);
+    });
+
+    if (gs.gameState === 'swinging') {
+      gs.angle += SWING_STEP * gs.angleDir;
+      if (gs.angle > SWING_AMPLITUDE) gs.angleDir = -1;
+      if (gs.angle < -SWING_AMPLITUDE) gs.angleDir = 1;
+    }
+
+    var endX = gs.pivotX + Math.sin(gs.angle) * gs.chainLength;
+    var endY = gs.pivotY + Math.cos(gs.angle) * gs.chainLength;
+
+    if (gs.gameState === 'extending') {
+      gs.chainLength += EXTEND_SPEED;
+      gs.fish.forEach(function(f) {
+        if (f.caught) return;
+        var dx = endX - f.x;
+        var dy = endY - f.y;
+        if (Math.sqrt(dx * dx + dy * dy) < f.width * 0.4) {
+          f.caught = true;
+          gs.caughtFish = f;
+          gs.gameState = 'retracting';
+          gs.score += f.score;
+          gs.showCatchEffect = true;
+          gs.catchEffectTimer = CATCH_EFFECT_FRAMES;
+          gs.catchEffectText = f.score >= 0 ? '+' + f.score : '' + f.score;
+        }
+      });
+      if (gs.chainLength >= gs.maxChainLength) {
+        gs.gameState = 'retracting';
+      }
+    }
+
+    if (gs.gameState === 'retracting') {
+      var speed = gs.caughtFish ? RETRACT_SPEED_FISH : RETRACT_SPEED;
+      gs.chainLength -= speed;
+      if (gs.caughtFish) {
+        gs.caughtFish.x = endX;
+        gs.caughtFish.y = endY;
+      }
+      if (gs.chainLength <= CHAIN_INIT) {
+        gs.chainLength = CHAIN_INIT;
+        gs.gameState = 'swinging';
+        gs.caughtFish = null;
+        if (gs.fish.every(function(f) { return f.caught; })) {
+          gs.fish = initFish(w, h, gs.pivotY);
+        }
+      }
+    }
+
+    drawChainLinks(gs.pivotX, gs.pivotY, endX, endY);
+    if (gs.caughtFish && gs.fishImages[gs.caughtFish.type]) drawFish(gs.caughtFish, gs.fishImages[gs.caughtFish.type]);
+    drawClaw(endX, endY, gs.caughtFish !== null);
+
+    if (gs.catImage) {
+      var catW = 120;
+      var catH = (gs.catImage.height / gs.catImage.width) * catW;
+      ctx.drawImage(gs.catImage, gs.pivotX - catW / 2, gs.pivotY - catH + 30, catW, catH);
+    }
+
+    if (gs.showCatchEffect && gs.catchEffectTimer > 0) {
+      gs.catchEffectTimer--;
+      var alpha = gs.catchEffectTimer / CATCH_EFFECT_FRAMES;
+      var offsetY = (CATCH_EFFECT_FRAMES - gs.catchEffectTimer) * 0.8;
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.font = 'bold 32px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillStyle = gs.catchEffectText.indexOf('-') === 0 ? '#FF4444' : '#FFD700';
+      ctx.strokeStyle = 'rgba(0,0,0,0.7)';
+      ctx.lineWidth = 3;
+      ctx.strokeText(gs.catchEffectText, w / 2, gs.pivotY + 80 - offsetY);
+      ctx.fillText(gs.catchEffectText, w / 2, gs.pivotY + 80 - offsetY);
+      ctx.restore();
+      if (gs.catchEffectTimer <= 0) gs.showCatchEffect = false;
+    }
+
+    ctx.save();
+    ctx.font = 'bold 20px sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillStyle = '#FFD700';
+    ctx.strokeStyle = 'rgba(0,0,0,0.6)';
+    ctx.lineWidth = 3;
+    ctx.strokeText('Score: ' + gs.score, 16, 30);
+    ctx.fillText('Score: ' + gs.score, 16, 30);
+    ctx.restore();
+
+    if (gs.gameState === 'swinging') {
+      ctx.save();
+      ctx.font = '16px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillStyle = 'rgba(255,255,255,0.6)';
+      ctx.fillText('Tap to catch fish!', w / 2, h - 16);
+      ctx.restore();
+    }
+
+    requestAnimationFrame(gameLoop);
+  }
+
+  function handleClick() {
+    if (state.gameState !== 'swinging') return;
+    state.gameState = 'extending';
+    state.chainLength = CHAIN_INIT;
+    state.caughtFish = null;
+  }
+
+  var wrap = document.getElementById('wrap');
+  wrap.addEventListener('click', handleClick);
+  wrap.addEventListener('touchstart', function(e) {
+    e.preventDefault();
+    handleClick();
+  }, { passive: false });
+
+  window.addEventListener('resize', resize);
+})();
+  </script>
+</body>
+</html>
