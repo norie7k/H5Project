@@ -42,8 +42,12 @@ python3 -m http.server 8080
 - **index.html**：根路径入口，访问 `/` 时跳转到问卷主页
 - **vercel.json**：根路径重写到主页；并设置安全相关响应头
 - **.vercelignore**：排除 `.venv`、脚本等，减少上传体积
-- **大体积音频**：为避免 push 时 HTTP 408 超时，以下 8 个 .wav 已加入 `.gitignore`，不会推送到 GitHub，部署后线上对应 BGM 会缺失；文件仍保留在本地。若需线上播放，可后用 [Git LFS](https://git-lfs.com) 或上传到 CDN 并改 HTML 中的引用。
-  - `1.主页/开始.wav`、`1.主页/Anescanada Church (...).wav`
-  - `Q3/drama.wav`、`Q3/system.wav`
-  - `Q4/early.wav`、`Q4/The Texas (...).wav`
-  - `结束/Whispering.wav`、`结束/over.wav`
+- **大体积音频**：原始 8 个 .wav 在 `.gitignore` 中，不推送。请用脚本生成「最多 120 秒」的 MP3 后再提交并推送，线上即可正常播放：
+  ```bash
+  brew install ffmpeg   # 若未安装
+  bash scripts/trim_audio_to_120s.sh
+  git add "1.主页"/*.mp3 Q3/*.mp3 Q4/*.mp3 结束/*.mp3 scripts/
+  git add -u
+  git commit -m "chore: 大音频裁切 120s 并转 MP3"
+  git push
+  ```
