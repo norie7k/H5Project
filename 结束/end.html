@@ -167,9 +167,12 @@ body{display:flex;flex-direction:column;align-items:center;min-height:100dvh}
   animation:cursorBlink .55s step-end infinite;
 }
 .stage-bgm-hint{
-  font-family:'Press Start 2P',monospace;font-size:5.5px;
-  color:rgba(255,255,255,.25);letter-spacing:.08em;margin-top:12px;
+  font-family:'Press Start 2P',monospace;font-size:7px;
+  color:rgba(0,255,255,.55);letter-spacing:.06em;margin-top:12px;
+  text-align:center;opacity:0;transition:opacity .4s;
 }
+.stage-bgm-hint.show{opacity:1;animation:bgmPulse 2s ease-in-out infinite}
+@keyframes bgmPulse{0%,100%{opacity:.55}50%{opacity:1}}
 
 /* ═══════════ BREAK CANVAS ═══════════ */
 #breakCanvas{
@@ -413,7 +416,7 @@ body{display:flex;flex-direction:column;align-items:center;min-height:100dvh}
     <div class="d-speaker">春姬 · Niuma</div>
     <div class="d-text" id="dText"><span class="d-cursor"></span></div>
   </div>
-  <div class="stage-bgm-hint" id="stageBgmHint">点击画面开启 BGM</div>
+  <div class="stage-bgm-hint" id="stageBgmHint">🔊 点击画面开启背景音乐</div>
 </div>
 
 <!-- ════════════════════════
@@ -594,50 +597,45 @@ var tokenFill= document.getElementById('tokenFill');
 var tokenVal = document.getElementById('tokenVal');
 var avBody   = document.getElementById('avBody');
 
-// 与 Q1/Q2/Q3/主页一致：舞台 BGM 加载即播，首次点击再播一次兜底
-function startStageBgm() {
+var _stageBgmOK=false;
+function startStageBgm(fromUser) {
   var bgm = document.getElementById('stageBgm');
   if (!bgm) return;
   bgm.volume = 0.4;
-  bgm.play().catch(function () {});
-  var h = document.getElementById('stageBgmHint');
-  if (h) h.style.display = 'none';
+  if(_stageBgmOK){if(bgm.paused)bgm.play().catch(function(){});return;}
+  if(fromUser){
+    bgm.muted=false;
+    bgm.play().then(function(){_stageBgmOK=true;_hideStageHint();}).catch(function(){});
+    _unlockReportBgm();
+    return;
+  }
+  var p=bgm.play();
+  if(p&&typeof p.then==='function'){
+    p.then(function(){_stageBgmOK=true;_hideStageHint();}).catch(function(){
+      bgm.muted=true;bgm.play().catch(function(){});_showStageHint();
+    });
+  }
 }
-startStageBgm();
-// 加载时顺带解锁报告页 BGM，切到报告页时才能播（与舞台 BGM 同属「跳转即生效」）
-(function () {
-  var reportBgm = document.getElementById('reportBgm');
-  if (!reportBgm) return;
-  var p = reportBgm.play();
-  if (p && typeof p.then === 'function') {
-    p.then(function () { reportBgm.pause(); reportBgm.currentTime = 0; }).catch(function () {});
+function _showStageHint(){var h=document.getElementById('stageBgmHint');if(h)h.classList.add('show');}
+function _hideStageHint(){var h=document.getElementById('stageBgmHint');if(h)h.classList.remove('show');}
+function _unlockReportBgm(){
+  var reportBgm=document.getElementById('reportBgm');
+  if(!reportBgm)return;
+  var rp=reportBgm.play();
+  if(rp&&typeof rp.then==='function'){
+    rp.then(function(){reportBgm.pause();reportBgm.currentTime=0;}).catch(function(){});
   }
-})();
-document.addEventListener('click', function onFirst() {
-  startStageBgm();
-  document.removeEventListener('click', onFirst);
-  document.removeEventListener('touchstart', onFirst);
-  // 解锁报告页 BGM，以便 switchToReport() 时能播
-  var reportBgm = document.getElementById('reportBgm');
-  if (reportBgm) {
-    var rp = reportBgm.play();
-    if (rp && typeof rp.then === 'function') {
-      rp.then(function () { reportBgm.pause(); reportBgm.currentTime = 0; }).catch(function () {});
-    }
-  }
-}, { once: true, passive: true });
-document.addEventListener('touchstart', function onFirst() {
-  startStageBgm();
-  document.removeEventListener('click', onFirst);
-  document.removeEventListener('touchstart', onFirst);
-  var reportBgm = document.getElementById('reportBgm');
-  if (reportBgm) {
-    var rp = reportBgm.play();
-    if (rp && typeof rp.then === 'function') {
-      rp.then(function () { reportBgm.pause(); reportBgm.currentTime = 0; }).catch(function () {});
-    }
-  }
-}, { once: true, passive: true });
+}
+startStageBgm(false);
+_unlockReportBgm();
+['click','touchstart'].forEach(function(ev){
+  document.addEventListener(ev,function onFirst(){
+    var bgm=document.getElementById('stageBgm');if(bgm&&bgm.muted){bgm.muted=false;}
+    startStageBgm(true);
+    document.removeEventListener('click',onFirst);
+    document.removeEventListener('touchstart',onFirst);
+  },{once:true,passive:true});
+});
 
 function runStep(){
   if(idx>=SCRIPT.length){ doBreak(); return; }

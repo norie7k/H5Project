@@ -31,8 +31,10 @@ body{display:flex;flex-direction:column;align-items:center;min-height:100vh}
 .intro-bubble em{color:var(--cyan);font-style:normal}
 .intro-btn{font-family:'Press Start 2P',monospace;font-size:8px;color:var(--cyan);border:1px solid rgba(0,255,255,.5);padding:12px 28px;background:rgba(0,255,255,.08);cursor:pointer;display:block;margin:0 auto;transition:background .2s,box-shadow .2s;letter-spacing:.05em}
 .intro-btn:hover{background:rgba(0,255,255,.18);box-shadow:0 0 20px rgba(0,255,255,.25)}
-.intro-bgm-hint{font-size:10px;color:rgba(255,255,255,.35);margin-top:14px;letter-spacing:.05em}
-.intro-bgm-hint.bgm-on{opacity:0;pointer-events:none;transition:opacity .4s}
+.intro-bgm-hint{font-family:'Press Start 2P',monospace;font-size:7px;color:rgba(0,255,255,.55);letter-spacing:.06em;margin-top:12px;text-align:center;opacity:0;transition:opacity .4s}
+.intro-bgm-hint.show{opacity:1;animation:bgmPulse 2s ease-in-out infinite}
+.intro-bgm-hint.bgm-on{opacity:0;pointer-events:none}
+@keyframes bgmPulse{0%,100%{opacity:.55}50%{opacity:1}}
 
 /* 彩蛋截获弹窗 — 选择后先弹出（打字机+故障闪）再进音游 */
 .modal-backdrop{position:fixed;inset:0;z-index:700;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0);animation:backdropIn .3s ease forwards}
@@ -403,6 +405,7 @@ body{display:flex;flex-direction:column;align-items:center;min-height:100vh}
       别愣着了，帮你把锈住的<em>节奏回路</em>搓活！
     </div>
     <button class="intro-btn" id="introBtn">开始挑战</button>
+    <div class="intro-bgm-hint" id="introBgmHint">🔊 点击后将开启背景音乐</div>
   </div>
 </div>
 
@@ -1242,23 +1245,36 @@ window.addEventListener('keydown', function(e){
 
 var bgm = document.getElementById('bgm');
 if(bgm) bgm.volume = 0.7;
-function startBgm(){
+var _bgmOK=false;
+function startBgm(fromUser){
   if(!bgm) return;
-  var p = bgm.play();
-  if(p && typeof p.then === 'function') p.catch(function(){});
+  bgm.volume = 0.7;
+  if(_bgmOK){if(bgm.paused)bgm.play().catch(function(){});return;}
+  if(fromUser){
+    bgm.muted=false;
+    bgm.play().then(function(){_bgmOK=true;_hideBH();}).catch(function(){});
+    return;
+  }
+  var p=bgm.play();
+  if(p&&typeof p.then==='function'){
+    p.then(function(){_bgmOK=true;_hideBH();}).catch(function(){
+      bgm.muted=true;bgm.play().catch(function(){});_showBH();
+    });
+  }
 }
-startBgm();
+function _showBH(){var h=document.getElementById('introBgmHint');if(h)h.classList.add('show');}
+function _hideBH(){var h=document.getElementById('introBgmHint');if(h){h.classList.remove('show');h.classList.add('bgm-on');}}
+startBgm(false);
 function onIntroInteraction(){
-  startBgm();
-  var h = document.getElementById('introBgmHint');
-  if(h) h.classList.add('bgm-on');
+  if(bgm&&bgm.muted){bgm.muted=false;}
+  startBgm(true);
   document.getElementById('introOverlay').removeEventListener('click', onIntroInteraction);
   document.getElementById('introOverlay').removeEventListener('touchstart', onIntroInteraction);
 }
 document.getElementById('introOverlay').addEventListener('click', onIntroInteraction);
 document.getElementById('introOverlay').addEventListener('touchstart', onIntroInteraction, { passive: true });
 document.getElementById('introBtn').addEventListener('click', function(){
-  startBgm();
+  startBgm(true);
   document.getElementById('introOverlay').classList.add('hidden');
   document.getElementById('q3Main').classList.add('visible');
 });

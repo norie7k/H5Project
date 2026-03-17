@@ -59,6 +59,9 @@ body{display:flex;flex-direction:column;align-items:center;min-height:100vh}
   transition:background .2s,box-shadow .2s;letter-spacing:.06em}
 .intro-btn:hover{background:rgba(0,255,255,.15);box-shadow:0 0 18px rgba(0,255,255,.3)}
 .intro-btn:disabled{opacity:.35;cursor:not-allowed}
+.bgm-hint{font-family:'Press Start 2P',monospace;font-size:7px;color:rgba(0,255,255,.55);letter-spacing:.06em;margin-top:12px;text-align:center;opacity:0;transition:opacity .4s}
+.bgm-hint.show{opacity:1;animation:bgmPulse 2s ease-in-out infinite}
+@keyframes bgmPulse{0%,100%{opacity:.55}50%{opacity:1}}
 
 /* ── LAYOUT ── */
 #app{position:relative;z-index:10;max-width:420px;width:100%;padding:14px 14px 48px;
@@ -418,6 +421,7 @@ textarea.essay:focus{outline:none}
       独属于旧时代的直白沟通，没有花哨修饰，是真切感受，不妨把想法<em>落笔成文</em>
     </div>
     <button class="intro-btn" id="introBtn">开始作答</button>
+    <div class="bgm-hint" id="bgmHint">🔊 点击后将开启背景音乐</div>
   </div>
 </div>
 
@@ -552,29 +556,41 @@ function playClick(){try{var ctx=new(window.AudioContext||window.webkitAudioCont
 function playChime(){try{var ctx=new(window.AudioContext||window.webkitAudioContext)(),n=ctx.currentTime;[880,1100,1320].forEach(function(f,i){var o=ctx.createOscillator(),g=ctx.createGain();o.type='sine';o.frequency.value=f;g.gain.setValueAtTime(0,n+i*.1);g.gain.linearRampToValueAtTime(.3,n+i*.1+.02);g.gain.linearRampToValueAtTime(0,n+i*.1+.2);o.connect(g);g.connect(ctx.destination);o.start(n+i*.1);o.stop(n+i*.1+.25);});}catch(e){}}
 
 // ── Intro：介绍页首次点击即播 BGM，再点「开始作答」进入考场 ──
-function startQ4Bgm(){
+var _bgmOK=false;
+function startQ4Bgm(fromUser){
   var b=document.getElementById('bgm');
-  if(!b||b._started) return;
+  if(!b) return;
   b.volume=.44;
+  if(_bgmOK){if(b.paused)b.play().catch(function(){});return;}
+  if(fromUser){
+    b.muted=false;
+    b.play().then(function(){_bgmOK=true;b._started=true;_hideBH();}).catch(function(){});
+    return;
+  }
   var p=b.play();
-  if(p) p.then(function(){ b._started=true; }).catch(function(){});
+  if(p&&typeof p.then==='function'){
+    p.then(function(){_bgmOK=true;b._started=true;_hideBH();}).catch(function(){
+      b.muted=true;b.play().catch(function(){});_showBH();
+    });
+  }
 }
+function _showBH(){var h=document.getElementById('bgmHint');if(h)h.classList.add('show');}
+function _hideBH(){var h=document.getElementById('bgmHint');if(h)h.classList.remove('show');}
 
-// 页面加载立即尝试
-startQ4Bgm();
+startQ4Bgm(false);
 
-// intro 区域点击也尝试（兜底）
 var introOverlay=document.getElementById('introOverlay');
 function onIntroFirstInteraction(){
   introOverlay.removeEventListener('click',onIntroFirstInteraction);
   introOverlay.removeEventListener('touchstart',onIntroFirstInteraction);
-  startQ4Bgm();
+  var b=document.getElementById('bgm');if(b&&b.muted){b.muted=false;}
+  startQ4Bgm(true);
 }
 introOverlay.addEventListener('click',onIntroFirstInteraction);
 introOverlay.addEventListener('touchstart',onIntroFirstInteraction,{passive:true});
 
 document.getElementById('introBtn').addEventListener('click',function(){
-  startQ4Bgm();
+  startQ4Bgm(true);
   document.getElementById('introOverlay').classList.add('hidden');
   document.getElementById('q4Main').classList.add('visible');
 });

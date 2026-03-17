@@ -1090,11 +1090,16 @@ function unmuteCsBgm(){
   var b=document.getElementById('cs-start-bgm');
   if(b){b.muted=false;}
 }
-// 与 Q1/Q2/Q3 一致：页面加载尝试播主页 BGM，首次点击/触摸解锁
-startBGM();
+// 页面加载时预加载主 BGM（静音），首次点击/触摸时解锁
+(function(){
+  var b=document.getElementById('bgm-audio');
+  if(b){b.muted=true;b.volume=0.28;b.play().catch(function(){});}
+})();
 function onDocFirstInteraction(){
   document.removeEventListener('click',onDocFirstInteraction);
   document.removeEventListener('touchstart',onDocFirstInteraction);
+  var b=document.getElementById('bgm-audio');
+  if(b&&b.muted&&!bgmPlaying&&!churchBGMPlaying){b.muted=false;}
   startBGM();
 }
 document.addEventListener('click',onDocFirstInteraction,{once:true,passive:true});

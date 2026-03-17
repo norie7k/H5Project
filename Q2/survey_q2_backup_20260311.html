@@ -34,6 +34,9 @@ body{display:flex;flex-direction:column;align-items:center;min-height:100vh}
 .intro-bubble em{color:var(--cyan);font-style:normal}
 .intro-btn{font-family:'Press Start 2P',monospace;font-size:8px;color:var(--cyan);border:1px solid rgba(0,255,255,.5);padding:12px 28px;background:rgba(0,255,255,.08);cursor:pointer;display:block;margin:0 auto;transition:background .2s,box-shadow .2s;letter-spacing:.05em}
 .intro-btn:hover{background:rgba(0,255,255,.18);box-shadow:0 0 20px rgba(0,255,255,.25)}
+.bgm-hint{font-family:'Press Start 2P',monospace;font-size:7px;color:rgba(0,255,255,.55);letter-spacing:.06em;margin-top:12px;text-align:center;opacity:0;transition:opacity .4s}
+.bgm-hint.show{opacity:1;animation:bgmPulse 2s ease-in-out infinite}
+@keyframes bgmPulse{0%,100%{opacity:.55}50%{opacity:1}}
 
 /* MAIN */
 .q2-main{display:none;flex-direction:column;gap:14px}
@@ -184,6 +187,7 @@ body{display:flex;flex-direction:column;align-items:center;min-height:100vh}
       参加<em>听力大考</em>解码藏在文字褶皱里的<em>纯粹的快乐本能</em>
     </div>
     <button class="intro-btn" id="introBtn">开始大考</button>
+    <div class="bgm-hint" id="bgmHint">🔊 点击后将开启背景音乐</div>
   </div>
 </div>
 
@@ -749,12 +753,32 @@ confirmBtn.addEventListener('click', function(){
   window.location.href = '../Q3/survey_q3.html';
 });
 
-function startBGM(){var b=document.getElementById('q2-bgm');if(b){b.volume=0.3;b.play().catch(function(){});}}
-startBGM();
-document.addEventListener('click',function onFirst(){startBGM();document.removeEventListener('click',onFirst);document.removeEventListener('touchstart',onFirst);},{once:true,passive:true});
-document.addEventListener('touchstart',function onFirst(){startBGM();document.removeEventListener('click',onFirst);document.removeEventListener('touchstart',onFirst);},{once:true,passive:true});
+var _bgmOK=false;
+function startBGM(fromUser){
+  var b=document.getElementById('q2-bgm');if(!b)return;
+  b.volume=0.3;
+  if(_bgmOK){if(b.paused)b.play().catch(function(){});return;}
+  if(fromUser){
+    b.muted=false;
+    b.play().then(function(){_bgmOK=true;_hideBH();}).catch(function(){});
+    return;
+  }
+  var p=b.play();
+  if(p&&typeof p.then==='function'){
+    p.then(function(){_bgmOK=true;_hideBH();}).catch(function(){
+      b.muted=true;b.play().catch(function(){});_showBH();
+    });
+  }
+}
+function _showBH(){var h=document.getElementById('bgmHint');if(h)h.classList.add('show');}
+function _hideBH(){var h=document.getElementById('bgmHint');if(h)h.classList.remove('show');}
+startBGM(false);
+['click','touchstart'].forEach(function(ev){document.addEventListener(ev,function f(){
+  var b=document.getElementById('q2-bgm');if(b&&b.muted){b.muted=false;}
+  startBGM(true);document.removeEventListener(ev,f);
+},{once:true,passive:true});});
 document.getElementById('introBtn').addEventListener('click', function(){
-  startBGM();
+  startBGM(true);
   document.getElementById('introOverlay').classList.add('hidden');
   document.getElementById('q2Main').classList.add('visible');
   buildCards();
