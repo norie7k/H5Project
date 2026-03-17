@@ -405,7 +405,6 @@ body{display:flex;flex-direction:column;align-items:center;min-height:100vh}
       别愣着了，帮你把锈住的<em>节奏回路</em>搓活！
     </div>
     <button class="intro-btn" id="introBtn">开始挑战</button>
-    <div class="intro-bgm-hint" id="introBgmHint">🔊 点击后将开启背景音乐</div>
   </div>
 </div>
 
@@ -1102,9 +1101,22 @@ function showEggModal(key, onConfirm){
   if(bgm) bgm.pause();
   var sysBgm = document.getElementById('systemBgm');
   if(sysBgm){ sysBgm.volume = 0.7; sysBgm.currentTime = 0; sysBgm.play().catch(function(){}); }
-  if(key === 'E'){
-    var bgmE = document.getElementById('bgmE');
-    if(bgmE && bgmE.readyState < 2) bgmE.load();
+  var bgmEl = document.getElementById('bgm' + key);
+  if(bgmEl){
+    if(bgmEl.readyState < 2) bgmEl.load();
+    bgmEl.volume = 0;
+    var _p = bgmEl.play();
+    if(_p && typeof _p.then === 'function'){
+      _p.then(function(){ bgmEl.pause(); bgmEl.currentTime = 0; bgmEl.volume = 0.7; }).catch(function(){});
+    }
+  }
+  var readyEl = document.getElementById('readyGoAudio');
+  if(readyEl){
+    readyEl.volume = 0;
+    var _rp = readyEl.play();
+    if(_rp && typeof _rp.then === 'function'){
+      _rp.then(function(){ readyEl.pause(); readyEl.currentTime = 0; readyEl.volume = 1; }).catch(function(){});
+    }
   }
   var backdrop = document.createElement('div');
   backdrop.className = 'modal-backdrop';
@@ -1262,8 +1274,8 @@ function startBgm(fromUser){
     });
   }
 }
-function _showBH(){var h=document.getElementById('introBgmHint');if(h)h.classList.add('show');}
-function _hideBH(){var h=document.getElementById('introBgmHint');if(h){h.classList.remove('show');h.classList.add('bgm-on');}}
+function _showBH(){}
+function _hideBH(){}
 startBgm(false);
 function onIntroInteraction(){
   if(bgm&&bgm.muted){bgm.muted=false;}

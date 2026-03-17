@@ -166,14 +166,6 @@ body{display:flex;flex-direction:column;align-items:center;min-height:100dvh}
   background:var(--pink);vertical-align:middle;margin-left:2px;
   animation:cursorBlink .55s step-end infinite;
 }
-.stage-bgm-hint{
-  font-family:'Press Start 2P',monospace;font-size:7px;
-  color:rgba(0,255,255,.55);letter-spacing:.06em;margin-top:12px;
-  text-align:center;opacity:0;transition:opacity .4s;
-}
-.stage-bgm-hint.show{opacity:1;animation:bgmPulse 2s ease-in-out infinite}
-@keyframes bgmPulse{0%,100%{opacity:.55}50%{opacity:1}}
-
 /* ═══════════ BREAK CANVAS ═══════════ */
 #breakCanvas{
   position:fixed;inset:0;z-index:700;pointer-events:none;
@@ -416,7 +408,6 @@ body{display:flex;flex-direction:column;align-items:center;min-height:100dvh}
     <div class="d-speaker">春姬 · Niuma</div>
     <div class="d-text" id="dText"><span class="d-cursor"></span></div>
   </div>
-  <div class="stage-bgm-hint" id="stageBgmHint">🔊 点击画面开启背景音乐</div>
 </div>
 
 <!-- ════════════════════════
@@ -616,8 +607,8 @@ function startStageBgm(fromUser) {
     });
   }
 }
-function _showStageHint(){var h=document.getElementById('stageBgmHint');if(h)h.classList.add('show');}
-function _hideStageHint(){var h=document.getElementById('stageBgmHint');if(h)h.classList.remove('show');}
+function _showStageHint(){}
+function _hideStageHint(){}
 function _unlockReportBgm(){
   var reportBgm=document.getElementById('reportBgm');
   if(!reportBgm)return;

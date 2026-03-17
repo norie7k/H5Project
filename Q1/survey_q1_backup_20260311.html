@@ -34,9 +34,6 @@ body{display:flex;flex-direction:column;align-items:center;min-height:100vh}
 .intro-bubble em{color:var(--cyan);font-style:normal}
 .intro-btn{font-family:'Press Start 2P',monospace;font-size:8px;color:var(--cyan);border:1px solid rgba(0,255,255,.5);padding:12px 28px;background:rgba(0,255,255,.08);cursor:pointer;display:block;margin:0 auto;transition:background .2s,box-shadow .2s;letter-spacing:.05em}
 .intro-btn:hover{background:rgba(0,255,255,.18);box-shadow:0 0 20px rgba(0,255,255,.25)}
-.bgm-hint{font-family:'Press Start 2P',monospace;font-size:7px;color:rgba(0,255,255,.55);letter-spacing:.06em;margin-top:12px;text-align:center;opacity:0;transition:opacity .4s}
-.bgm-hint.show{opacity:1;animation:bgmPulse 2s ease-in-out infinite}
-@keyframes bgmPulse{0%,100%{opacity:.55}50%{opacity:1}}
 
 /* MAIN */
 .q1-main{display:none;flex-direction:column;gap:14px}
@@ -218,7 +215,6 @@ body{display:flex;flex-direction:column;align-items:center;min-height:100vh}
       一场跨越时代的<em>听觉考古</em>, 唤醒沉眠在时光纹路里的声音
     </div>
     <button class="intro-btn" id="introBtn">开始答题</button>
-    <div class="bgm-hint" id="bgmHint">🔊 点击后将开启背景音乐</div>
   </div>
 </div>
 
@@ -452,7 +448,9 @@ function handleClick(i){
     else audioEl.addEventListener('loadedmetadata',startPlay);
     stopAudio=()=>{if(bgmKeepInterval){clearInterval(bgmKeepInterval);bgmKeepInterval=null;}keepBGM();audioEl.pause();audioEl.currentTime=0;audioEl.onended=null;};
   }else{
-    stopAudio=playMelody(opt.melody,()=>{playingIdx=null;updateUI();});
+    var b=document.getElementById('q1-bgm');if(b)b.volume=0.1;
+    var melodyStop=playMelody(opt.melody,()=>{var b2=document.getElementById('q1-bgm');if(b2)b2.volume=0.3;playingIdx=null;updateUI();});
+    stopAudio=()=>{melodyStop();var b2=document.getElementById('q1-bgm');if(b2)b2.volume=0.3;};
     runKaraoke(opt);
   }
 }
@@ -733,6 +731,8 @@ document.getElementById('confirmBtn').addEventListener('click',()=>{
   updateUI();
   playClick();
   startBGM();
+  var z=document.getElementById('zailai-audio');
+  if(z){z.volume=0;var _zp=z.play();if(_zp&&typeof _zp.then==='function'){_zp.then(function(){z.pause();z.currentTime=0;z.volume=0.7;}).catch(function(){});}}
   locked=true;
   grid.querySelectorAll('.vinyl-btn').forEach(b=>b.disabled=true);
   document.getElementById('confirmZone').classList.remove('visible');
@@ -783,8 +783,8 @@ function startBGM(fromUser){
     });
   }
 }
-function _showBH(){var h=document.getElementById('bgmHint');if(h)h.classList.add('show');}
-function _hideBH(){var h=document.getElementById('bgmHint');if(h)h.classList.remove('show');}
+function _showBH(){}
+function _hideBH(){}
 startBGM(false);
 ['click','touchstart'].forEach(function(ev){document.addEventListener(ev,function f(){
   var b=document.getElementById('q1-bgm');if(b&&b.muted){b.muted=false;}
