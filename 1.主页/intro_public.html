@@ -492,15 +492,17 @@ function playChurchFrom106(){
       bgmChurch.volume=0.1;
       bgmChurch.currentTime=112;
       bgmChurch.loop=false;
+      var loadingEl=document.getElementById('loading-effect');
+      if(loadingEl){loadingEl.classList.add('show');}
+      var forcedTimer=setTimeout(function(){window.location.href='../Q0/survey_q0.html';},10000);
       var endAudio=document.getElementById('end-audio');
       if(endAudio){endAudio.currentTime=0;endAudio.volume=0.8;endAudio.play().catch(function(){});}
       function stopAt117(){
         if(bgmChurch.currentTime>=117){
+          clearTimeout(forcedTimer);
           bgmChurch.pause();
           churchBGMPlaying=false;
           bgmChurch.removeEventListener('timeupdate',stopAt117);
-          var loadingEl=document.getElementById('loading-effect');
-          if(loadingEl){loadingEl.classList.add('show');}
           setTimeout(function(){window.location.href='../Q0/survey_q0.html';},2500);
         }
       }
