@@ -233,7 +233,7 @@ body.ba-stage-open{overflow:hidden;touch-action:none}
 #loading-effect .load-bar-wrap{width:200px;height:6px;background:rgba(0,255,255,.15);border:1px solid rgba(0,255,255,.4);overflow:hidden;border-radius:3px;opacity:0;transform:scaleX(0);transform-origin:left}
 #loading-effect.show .load-bar-wrap{animation:loadBarWrapIn .3s .35s forwards}
 #loading-effect .load-bar-fill{height:100%;width:100%;background:linear-gradient(90deg,var(--cyan),#00ffff88);transform:scaleX(0);transform-origin:left}
-#loading-effect.show .load-bar-fill{animation:loadBarFill 1.2s .6s ease-out forwards}
+#loading-effect.show .load-bar-fill{animation:loadBarFill 1.8s .2s ease-out forwards}
 @keyframes loadLabelIn{0%{opacity:0;transform:scale(.8)}100%{opacity:1;transform:scale(1)}}
 @keyframes loadBarWrapIn{0%{opacity:0;transform:scaleX(0)}100%{opacity:1;transform:scaleX(1)}}
 @keyframes loadBarFill{0%{transform:scaleX(0)}100%{transform:scaleX(1)}}
@@ -492,18 +492,21 @@ function playChurchFrom106(){
       bgmChurch.volume=0.1;
       bgmChurch.currentTime=112;
       bgmChurch.loop=false;
-      var loadingEl=document.getElementById('loading-effect');
-      if(loadingEl){loadingEl.classList.add('show');}
+      var _loadShown=false;
+      function _showLoad(){if(_loadShown)return;_loadShown=true;var el=document.getElementById('loading-effect');if(el)el.classList.add('show');}
+      var _loadFallback=setTimeout(_showLoad,8000);
       var forcedTimer=setTimeout(function(){window.location.href='../Q0/survey_q0.html';},10000);
       var endAudio=document.getElementById('end-audio');
       if(endAudio){endAudio.currentTime=0;endAudio.volume=0.8;endAudio.play().catch(function(){});}
       function stopAt117(){
         if(bgmChurch.currentTime>=117){
           clearTimeout(forcedTimer);
+          clearTimeout(_loadFallback);
           bgmChurch.pause();
           churchBGMPlaying=false;
           bgmChurch.removeEventListener('timeupdate',stopAt117);
-          setTimeout(function(){window.location.href='../Q0/survey_q0.html';},2500);
+          _showLoad();
+          setTimeout(function(){window.location.href='../Q0/survey_q0.html';},2200);
         }
       }
       bgmChurch.addEventListener('timeupdate',stopAt117);
@@ -1090,16 +1093,10 @@ function unmuteCsBgm(){
   var b=document.getElementById('cs-start-bgm');
   if(b){b.muted=false;}
 }
-// 页面加载时预加载主 BGM（静音），首次点击/触摸时解锁
-(function(){
-  var b=document.getElementById('bgm-audio');
-  if(b){b.muted=true;b.volume=0.28;b.play().catch(function(){});}
-})();
+startBGM();
 function onDocFirstInteraction(){
   document.removeEventListener('click',onDocFirstInteraction);
   document.removeEventListener('touchstart',onDocFirstInteraction);
-  var b=document.getElementById('bgm-audio');
-  if(b&&b.muted&&!bgmPlaying&&!churchBGMPlaying){b.muted=false;}
   startBGM();
 }
 document.addEventListener('click',onDocFirstInteraction,{once:true,passive:true});
@@ -1113,6 +1110,10 @@ cs.addEventListener('click',function(e){
   if(!e.target.closest('.cs-btn'))return;
   var csBgm=document.getElementById('cs-start-bgm');
   if(csBgm){csBgm.pause();csBgm.currentTime=0;}
+  ['bgm-church','end-audio'].forEach(function(id){
+    var el=document.getElementById(id);
+    if(el){var v=el.volume;el.muted=true;var _p=el.play();if(_p&&typeof _p.then==='function'){_p.then(function(){el.pause();el.currentTime=0;el.muted=false;}).catch(function(){});};}
+  });
   startBGM();
   cs.style.transition='opacity .6s';
   cs.style.opacity='0';

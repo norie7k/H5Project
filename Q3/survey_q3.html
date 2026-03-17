@@ -1104,18 +1104,18 @@ function showEggModal(key, onConfirm){
   var bgmEl = document.getElementById('bgm' + key);
   if(bgmEl){
     if(bgmEl.readyState < 2) bgmEl.load();
-    bgmEl.volume = 0;
+    bgmEl.muted = true;
     var _p = bgmEl.play();
     if(_p && typeof _p.then === 'function'){
-      _p.then(function(){ bgmEl.pause(); bgmEl.currentTime = 0; bgmEl.volume = 0.7; }).catch(function(){});
+      _p.then(function(){ bgmEl.pause(); bgmEl.currentTime = 0; bgmEl.muted = false; }).catch(function(){});
     }
   }
   var readyEl = document.getElementById('readyGoAudio');
   if(readyEl){
-    readyEl.volume = 0;
+    readyEl.muted = true;
     var _rp = readyEl.play();
     if(_rp && typeof _rp.then === 'function'){
-      _rp.then(function(){ readyEl.pause(); readyEl.currentTime = 0; readyEl.volume = 1; }).catch(function(){});
+      _rp.then(function(){ readyEl.pause(); readyEl.currentTime = 0; readyEl.muted = false; }).catch(function(){});
     }
   }
   var backdrop = document.createElement('div');

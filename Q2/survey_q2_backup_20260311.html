@@ -413,7 +413,7 @@ function stopAllAudio(){
 
 // ── 播放选项听力时 BGM 压低（与 Q1 放歌时一致）────────────────────────────
 var bgmKeepInterval = null;
-function duckBGM(){ var b = document.getElementById('q2-bgm'); if (b) { b.volume = 0.1; if (b.paused) b.play().catch(function(){}); } }
+function duckBGM(){ var b = document.getElementById('q2-bgm'); if (b) { b.volume = 0.03; if (b.paused) b.play().catch(function(){}); } }
 function restoreBGM(){ if (bgmKeepInterval) { clearInterval(bgmKeepInterval); bgmKeepInterval = null; } var b = document.getElementById('q2-bgm'); if (b) b.volume = 0.3; }
 
 function buildCards(){
