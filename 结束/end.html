@@ -612,9 +612,10 @@ function _hideStageHint(){}
 function _unlockReportBgm(){
   var reportBgm=document.getElementById('reportBgm');
   if(!reportBgm)return;
+  reportBgm.muted=true;
   var rp=reportBgm.play();
   if(rp&&typeof rp.then==='function'){
-    rp.then(function(){reportBgm.pause();reportBgm.currentTime=0;}).catch(function(){});
+    rp.then(function(){reportBgm.pause();reportBgm.currentTime=0;reportBgm.muted=false;}).catch(function(){});
   }
 }
 startStageBgm(false);
@@ -859,9 +860,9 @@ function switchToReport(){
 
   // 切换 BGM：停止舞台 BGM，播放结果页 Whispering.wav
   var stageBgm=document.getElementById('stageBgm');
-  if(stageBgm) stageBgm.pause();
+  if(stageBgm){stageBgm.pause();stageBgm.currentTime=0;}
   var reportBgm=document.getElementById('reportBgm');
-  if(reportBgm){ reportBgm.volume=0.4; var p=reportBgm.play(); if(p) p.catch(function(){}); }
+  if(reportBgm){reportBgm.muted=false;reportBgm.volume=0.4;reportBgm.currentTime=0;var p=reportBgm.play();if(p)p.catch(function(){});}
 
   // 白屏淡出
   var wo=document.getElementById('whiteOut');
